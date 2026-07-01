@@ -1,21 +1,28 @@
-# Backend (Python / uv)
-backend/.venv/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/*.db
-backend/.pytest_cache/
-backend/.env
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
 
-# Frontend (Nuxt / Node)
-frontend/node_modules/
-frontend/.nuxt/
-frontend/.output/
-frontend/.env
+# Node dependencies
+node_modules
 
-# Environment overrides
-.env
+# Logs
+logs
+*.log
 
-# Editor / OS
+# Misc
 .DS_Store
-.vscode/
-.idea/
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# SQLite database
+data/*.db
+data/*.db-*
