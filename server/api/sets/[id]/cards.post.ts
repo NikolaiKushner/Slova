@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, max } from "drizzle-orm";
 
 import { cards } from "../../../database/schema";
 
@@ -7,15 +7,12 @@ export default defineEventHandler(async (event) => {
   const setId = Number(getRouterParam(event, "id"));
   await getOwnedSet(setId, user.id);
 
-  const body = await readBody<{ term?: string; definition?: string }>(event);
-  const term = body?.term?.trim();
-  const definition = body?.definition?.trim();
-  if (!term || !definition) {
-    throw createError({ statusCode: 400, statusMessage: "Term and definition are required" });
-  }
+  const { term, definition } = await readCardInput(event);
 
-  const existing = await db.select().from(cards).where(eq(cards.setId, setId));
-  const position = existing.length;
+  // max(position) + 1 rather than row count: counts reuse positions of
+  // deleted cards, breaking the study-mode ordering.
+  const [row] = await db.select({ maxPosition: max(cards.position) }).from(cards).where(eq(cards.setId, setId));
+  const position = (row?.maxPosition ?? -1) + 1;
 
   const [card] = await db.insert(cards).values({ setId, term, definition, position }).returning();
   return card;

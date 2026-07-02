@@ -18,7 +18,7 @@ interface QuizSet {
 const route = useRoute();
 const setId = route.params.id as string;
 
-const { data: set, refresh } = await useFetch<QuizSet>(`/api/sets/${setId}`);
+const { data: set, error, refresh } = await useFetch<QuizSet>(`/api/sets/${setId}`);
 
 const term = ref("");
 const definition = ref("");
@@ -117,9 +117,18 @@ function startStudy() {
       </div>
     </template>
   </div>
+  <div v-else class="not-found">
+    <p>{{ error?.statusCode === 404 ? "Set not found." : "Failed to load this set." }}</p>
+    <NuxtLink to="/">&larr; My sets</NuxtLink>
+  </div>
 </template>
 
 <style scoped>
+.not-found {
+  text-align: center;
+  color: #6b7280;
+  margin-top: 3rem;
+}
 .description {
   color: #6b7280;
 }

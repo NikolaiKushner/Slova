@@ -3,15 +3,9 @@ import { eq } from "drizzle-orm";
 import { users } from "../../database/schema";
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ email?: string; password?: string }>(event);
-  const email = body?.email?.trim().toLowerCase();
-  const password = body?.password;
-
-  if (!email || !password || password.length < 8) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Email and password (min 8 characters) are required",
-    });
+  const { email, password } = await readCredentials(event);
+  if (password.length < 8) {
+    throw createError({ statusCode: 400, statusMessage: "Password must be at least 8 characters" });
   }
 
   const [existing] = await db.select().from(users).where(eq(users.email, email));
