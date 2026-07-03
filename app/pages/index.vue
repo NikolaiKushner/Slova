@@ -6,6 +6,9 @@ interface QuizSet {
   title: string;
   description: string | null;
   createdAt: string;
+  cardCount: number;
+  learnedCount: number;
+  dueCount: number;
 }
 
 const { data: sets, refresh } = await useFetch<QuizSet[]>("/api/sets");
@@ -50,6 +53,8 @@ async function removeSet(id: number) {
       <li v-for="set in sets" :key="set.id">
         <NuxtLink :to="`/sets/${set.id}`">{{ set.title }}</NuxtLink>
         <span v-if="set.description" class="description">{{ set.description }}</span>
+        <span v-if="set.dueCount" class="due-badge">{{ set.dueCount }} due</span>
+        <span v-else-if="set.cardCount" class="done-badge">✓ done for now</span>
         <button type="button" @click="removeSet(set.id)">Delete</button>
       </li>
       <li v-if="!sets?.length" class="empty">No sets yet — create one above.</li>
@@ -92,5 +97,19 @@ async function removeSet(id: number) {
   color: #9ca3af;
   border: none;
   justify-content: center;
+}
+.due-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.done-badge {
+  color: #16a34a;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 </style>

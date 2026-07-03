@@ -15,6 +15,13 @@
       "when": 1782977307510,
       "tag": "0001_typical_luke_cage",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783078610157,
+      "tag": "0002_cute_darkstar",
+      "breakpoints": true
     }
   ]
 }

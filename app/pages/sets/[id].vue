@@ -1,18 +1,14 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
+import type { StudyCard } from "~/components/StudySession.vue";
 
-interface Card {
-  id: number;
-  term: string;
-  definition: string;
-  position: number;
-}
+definePageMeta({ middleware: "auth" });
 
 interface QuizSet {
   id: number;
   title: string;
   description: string | null;
-  cards: Card[];
+  now: string;
+  cards: StudyCard[];
 }
 
 const route = useRoute();
@@ -46,26 +42,46 @@ async function removeCard(id: number) {
 }
 
 const mode = ref<"edit" | "study">("edit");
-const studyIndex = ref(0);
-const flipped = ref(false);
 
-const studyCard = computed(() => set.value?.cards[studyIndex.value]);
+// --- Study setup ---
+const direction = ref<"term-first" | "definition-first">("term-first");
+const queueType = ref<"due" | "all">("due");
+const sessionCards = ref<StudyCard[] | null>(null);
 
-function next() {
-  if (!set.value?.cards.length) return;
-  flipped.value = false;
-  studyIndex.value = (studyIndex.value + 1) % set.value.cards.length;
+// The server sends its clock with the set so due checks don't depend on the
+// client's timezone; timestamps are UTC strings and compare lexicographically.
+const dueCards = computed(
+  () =>
+    set.value?.cards.filter(
+      (card) => !card.progress || card.progress.dueAt <= set.value!.now,
+    ) ?? [],
+);
+
+function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j]!, result[i]!];
+  }
+  return result;
 }
 
-function prev() {
-  if (!set.value?.cards.length) return;
-  flipped.value = false;
-  studyIndex.value = (studyIndex.value - 1 + set.value.cards.length) % set.value.cards.length;
+function startSession() {
+  const pool = queueType.value === "due" ? dueCards.value : (set.value?.cards ?? []);
+  if (!pool.length) return;
+  // Shuffled, but cards failed most often surface first.
+  sessionCards.value = shuffle(pool).sort(
+    (a, b) => (b.progress?.lapses ?? 0) - (a.progress?.lapses ?? 0),
+  );
 }
 
-function startStudy() {
-  studyIndex.value = 0;
-  flipped.value = false;
+async function endSession() {
+  sessionCards.value = null;
+  await refresh();
+}
+
+function openStudy() {
+  sessionCards.value = null;
   mode.value = "study";
 }
 </script>
@@ -82,7 +98,7 @@ function startStudy() {
         type="button"
         :class="{ active: mode === 'study' }"
         :disabled="!set.cards.length"
-        @click="startStudy"
+        @click="openStudy"
       >
         Study
       </button>
@@ -105,15 +121,68 @@ function startStudy() {
       </ul>
     </template>
 
-    <template v-else-if="studyCard">
-      <div class="flashcard" @click="flipped = !flipped">
-        <p>{{ flipped ? studyCard.definition : studyCard.term }}</p>
-        <span class="hint">Click to flip</span>
-      </div>
-      <div class="study-nav">
-        <button type="button" @click="prev">&larr; Prev</button>
-        <span>{{ studyIndex + 1 }} / {{ set.cards.length }}</span>
-        <button type="button" @click="next">Next &rarr;</button>
+    <template v-else>
+      <StudySession
+        v-if="sessionCards"
+        :cards="sessionCards"
+        :direction="direction"
+        @done="endSession"
+      />
+
+      <div v-else class="study-setup">
+        <div class="option-group">
+          <span class="label">Cards</span>
+          <div class="options">
+            <button
+              type="button"
+              :class="{ active: queueType === 'due' }"
+              @click="queueType = 'due'"
+            >
+              Due for review ({{ dueCards.length }})
+            </button>
+            <button
+              type="button"
+              :class="{ active: queueType === 'all' }"
+              @click="queueType = 'all'"
+            >
+              All cards ({{ set.cards.length }})
+            </button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <span class="label">Direction</span>
+          <div class="options">
+            <button
+              type="button"
+              :class="{ active: direction === 'term-first' }"
+              @click="direction = 'term-first'"
+            >
+              Term &rarr; Definition
+            </button>
+            <button
+              type="button"
+              :class="{ active: direction === 'definition-first' }"
+              @click="direction = 'definition-first'"
+            >
+              Definition &rarr; Term
+            </button>
+          </div>
+        </div>
+
+        <p v-if="queueType === 'due' && !dueCards.length" class="all-done">
+          🎉 Nothing to review right now — everything is scheduled for later. Come back
+          tomorrow, or practice all cards.
+        </p>
+
+        <button
+          type="button"
+          class="start"
+          :disabled="queueType === 'due' ? !dueCards.length : !set.cards.length"
+          @click="startSession"
+        >
+          Start studying
+        </button>
       </div>
     </template>
   </div>
@@ -178,25 +247,45 @@ function startStudy() {
   border: none;
   justify-content: center;
 }
-.flashcard {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 4rem 1rem;
-  text-align: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  user-select: none;
-}
-.flashcard .hint {
-  display: block;
-  margin-top: 1rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-.study-nav {
+.study-setup {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
+  flex-direction: column;
+  gap: 1rem;
+}
+.option-group .label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+.options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.options button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.options button.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  font-weight: 600;
+}
+.all-done {
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+.start {
+  padding: 0.6rem;
+  font-size: 1rem;
 }
 </style>
