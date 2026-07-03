@@ -52,6 +52,23 @@ const sessionCards = ref<StudyCard[] | null>(null);
 // Multiple choice needs at least one wrong option to pick from.
 const choiceAvailable = computed(() => (set.value?.cards.length ?? 0) >= 2);
 
+const progressStats = computed(() => {
+  const cards = set.value?.cards ?? [];
+  const learned = cards.filter((card) => card.progress?.status === "learned").length;
+  const learning = cards.filter(
+    (card) => card.progress && card.progress.status !== "learned",
+  ).length;
+  return { total: cards.length, learned, learning, fresh: cards.length - learned - learning };
+});
+
+// Cards failed most often — worth extra attention.
+const trickyCards = computed(() =>
+  (set.value?.cards ?? [])
+    .filter((card) => (card.progress?.lapses ?? 0) > 0)
+    .sort((a, b) => b.progress!.lapses - a.progress!.lapses)
+    .slice(0, 5),
+);
+
 // The server sends its clock with the set so due checks don't depend on the
 // client's timezone; timestamps are UTC strings and compare lexicographically.
 const dueCards = computed(
@@ -86,6 +103,24 @@ function openStudy() {
     <NuxtLink to="/">&larr; My sets</NuxtLink>
     <h1>{{ set.title }}</h1>
     <p v-if="set.description" class="description">{{ set.description }}</p>
+
+    <div v-if="progressStats.total" class="set-progress">
+      <div class="bar">
+        <div
+          class="segment learned"
+          :style="{ width: `${(progressStats.learned / progressStats.total) * 100}%` }"
+        />
+        <div
+          class="segment learning"
+          :style="{ width: `${(progressStats.learning / progressStats.total) * 100}%` }"
+        />
+      </div>
+      <div class="legend">
+        <span class="learned">● {{ progressStats.learned }} learned</span>
+        <span class="learning">● {{ progressStats.learning }} learning</span>
+        <span class="fresh">● {{ progressStats.fresh }} new</span>
+      </div>
+    </div>
 
     <div class="mode-switch">
       <button type="button" :class="{ active: mode === 'edit' }" @click="mode = 'edit'">Edit</button>
@@ -195,6 +230,17 @@ function openStudy() {
           </div>
         </div>
 
+        <div v-if="trickyCards.length" class="tricky">
+          <span class="label">Tricky words</span>
+          <ul>
+            <li v-for="card in trickyCards" :key="card.id">
+              <span class="term">{{ card.term }}</span>
+              <span class="definition">{{ card.definition }}</span>
+              <span class="misses">missed ×{{ card.progress!.lapses }}</span>
+            </li>
+          </ul>
+        </div>
+
         <p v-if="queueType === 'due' && !dueCards.length" class="all-done">
           🎉 Nothing to review right now — everything is scheduled for later. Come back
           tomorrow, or practice all cards.
@@ -225,6 +271,71 @@ function openStudy() {
 }
 .description {
   color: #6b7280;
+}
+.set-progress {
+  margin: 0.75rem 0;
+}
+.set-progress .bar {
+  display: flex;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.set-progress .segment.learned {
+  background: #22c55e;
+}
+.set-progress .segment.learning {
+  background: #f59e0b;
+}
+.set-progress .legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+}
+.set-progress .legend .learned {
+  color: #16a34a;
+}
+.set-progress .legend .learning {
+  color: #d97706;
+}
+.set-progress .legend .fresh {
+  color: #9ca3af;
+}
+.tricky .label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.35rem;
+}
+.tricky ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.tricky li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+.tricky .definition {
+  color: #6b7280;
+  flex: 1;
+}
+.tricky .misses {
+  color: #d97706;
+  white-space: nowrap;
 }
 .mode-switch {
   display: flex;
