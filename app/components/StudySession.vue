@@ -16,9 +16,13 @@ export interface StudyCard {
 }
 
 export type Rating = "again" | "hard" | "good";
+export type StudyMode = "flashcards" | "choice" | "typing";
 
 const props = defineProps<{
   cards: StudyCard[];
+  // Full set, used to draw wrong options for multiple choice.
+  allCards: StudyCard[];
+  mode: StudyMode;
   direction: "term-first" | "definition-first";
 }>();
 
@@ -26,7 +30,6 @@ const emit = defineEmits<{ done: [] }>();
 
 const queue = ref<StudyCard[]>([...props.cards]);
 const index = ref(0);
-const flipped = ref(false);
 const saving = ref(false);
 
 // Summary counts the first answer per card; in-session repeats don't recount.
@@ -43,14 +46,24 @@ function back(card: StudyCard) {
   return props.direction === "term-first" ? card.definition : card.term;
 }
 
-async function rate(rating: Rating) {
+const choiceOptions = computed(() => {
+  const card = current.value;
+  if (!card || props.mode !== "choice") return [];
+  const answer = back(card);
+  const distractors = shuffle(
+    [...new Set(props.allCards.map(back))].filter((text) => text !== answer),
+  ).slice(0, 3);
+  return shuffle([answer, ...distractors]);
+});
+
+async function submit(rating: Rating) {
   const card = current.value;
   if (!card || saving.value) return;
   saving.value = true;
   try {
     await $fetch(`/api/cards/${card.id}/review`, {
       method: "POST",
-      body: { rating, mode: "flashcards" },
+      body: { rating, mode: props.mode },
     });
     if (!firstAnswers.has(card.id)) {
       firstAnswers.set(card.id, rating);
@@ -58,26 +71,19 @@ async function rate(rating: Rating) {
     }
     // Failed cards come back at the end of the session until answered.
     if (rating === "again") queue.value.push(card);
-    flipped.value = false;
-    index.value += 1;
   } finally {
     saving.value = false;
   }
 }
 
-function onKeydown(e: KeyboardEvent) {
-  if (finished.value) return;
-  if (e.code === "Space") {
-    e.preventDefault();
-    flipped.value = !flipped.value;
-  } else if (flipped.value && ["1", "2", "3"].includes(e.key)) {
-    e.preventDefault();
-    rate((["again", "hard", "good"] as const)[Number(e.key) - 1]!);
-  }
+function advance() {
+  index.value += 1;
 }
 
-onMounted(() => window.addEventListener("keydown", onKeydown));
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
+async function rateAndAdvance(rating: Rating) {
+  await submit(rating);
+  advance();
+}
 </script>
 
 <template>
@@ -88,22 +94,31 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
         <div class="bar"><div class="fill" :style="{ width: `${(index / queue.length) * 100}%` }" /></div>
       </div>
 
-      <div class="flashcard" @click="flipped = !flipped">
-        <p>{{ flipped ? back(current) : front(current) }}</p>
-        <span class="hint">{{ flipped ? "How well did you know it?" : "Click or press Space to flip" }}</span>
-      </div>
-
-      <div v-if="flipped" class="ratings">
-        <button type="button" class="again" :disabled="saving" @click="rate('again')">
-          Again <kbd>1</kbd>
-        </button>
-        <button type="button" class="hard" :disabled="saving" @click="rate('hard')">
-          Hard <kbd>2</kbd>
-        </button>
-        <button type="button" class="good" :disabled="saving" @click="rate('good')">
-          Good <kbd>3</kbd>
-        </button>
-      </div>
+      <StudyFlashcard
+        v-if="mode === 'flashcards'"
+        :key="`${current.id}-${index}`"
+        :front="front(current)"
+        :back="back(current)"
+        :saving="saving"
+        @rate="rateAndAdvance"
+      />
+      <StudyChoice
+        v-else-if="mode === 'choice'"
+        :key="`${current.id}-${index}`"
+        :front="front(current)"
+        :answer="back(current)"
+        :options="choiceOptions"
+        @answered="submit"
+        @next="advance"
+      />
+      <StudyTyping
+        v-else
+        :key="`${current.id}-${index}`"
+        :front="front(current)"
+        :answer="back(current)"
+        @answered="submit"
+        @next="advance"
+      />
     </template>
 
     <div v-else class="summary">
@@ -139,51 +154,6 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
   height: 100%;
   background: #3b82f6;
   transition: width 0.2s;
-}
-.flashcard {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 4rem 1rem;
-  text-align: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  user-select: none;
-}
-.flashcard .hint {
-  display: block;
-  margin-top: 1rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-.ratings {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.ratings button {
-  flex: 1;
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.ratings kbd {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-left: 0.25rem;
-}
-.ratings .again {
-  background: #fef2f2;
-  border-color: #fecaca;
-}
-.ratings .hard {
-  background: #fffbeb;
-  border-color: #fde68a;
-}
-.ratings .good {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
 }
 .summary {
   text-align: center;

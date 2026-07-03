@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StudyCard } from "~/components/StudySession.vue";
+import type { StudyCard, StudyMode } from "~/components/StudySession.vue";
 
 definePageMeta({ middleware: "auth" });
 
@@ -44,9 +44,13 @@ async function removeCard(id: number) {
 const mode = ref<"edit" | "study">("edit");
 
 // --- Study setup ---
+const studyMode = ref<StudyMode>("flashcards");
 const direction = ref<"term-first" | "definition-first">("term-first");
 const queueType = ref<"due" | "all">("due");
 const sessionCards = ref<StudyCard[] | null>(null);
+
+// Multiple choice needs at least one wrong option to pick from.
+const choiceAvailable = computed(() => (set.value?.cards.length ?? 0) >= 2);
 
 // The server sends its clock with the set so due checks don't depend on the
 // client's timezone; timestamps are UTC strings and compare lexicographically.
@@ -56,15 +60,6 @@ const dueCards = computed(
       (card) => !card.progress || card.progress.dueAt <= set.value!.now,
     ) ?? [],
 );
-
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j]!, result[i]!];
-  }
-  return result;
-}
 
 function startSession() {
   const pool = queueType.value === "due" ? dueCards.value : (set.value?.cards ?? []);
@@ -125,11 +120,41 @@ function openStudy() {
       <StudySession
         v-if="sessionCards"
         :cards="sessionCards"
+        :all-cards="set.cards"
+        :mode="studyMode"
         :direction="direction"
         @done="endSession"
       />
 
       <div v-else class="study-setup">
+        <div class="option-group">
+          <span class="label">Mode</span>
+          <div class="options">
+            <button
+              type="button"
+              :class="{ active: studyMode === 'flashcards' }"
+              @click="studyMode = 'flashcards'"
+            >
+              🃏 Flashcards
+            </button>
+            <button
+              type="button"
+              :class="{ active: studyMode === 'choice' }"
+              :disabled="!choiceAvailable"
+              @click="studyMode = 'choice'"
+            >
+              ✅ Multiple choice
+            </button>
+            <button
+              type="button"
+              :class="{ active: studyMode === 'typing' }"
+              @click="studyMode = 'typing'"
+            >
+              ⌨️ Typing
+            </button>
+          </div>
+        </div>
+
         <div class="option-group">
           <span class="label">Cards</span>
           <div class="options">
@@ -276,6 +301,10 @@ function openStudy() {
   border-color: #3b82f6;
   background: #eff6ff;
   font-weight: 600;
+}
+.options button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .all-done {
   color: #16a34a;
