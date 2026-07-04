@@ -101,12 +101,12 @@ function openStudy() {
 
 <template>
   <div v-if="set">
-    <NuxtLink to="/" class="text-sm text-blue-600 hover:underline">&larr; My sets</NuxtLink>
+    <NuxtLink to="/" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
     <h1 class="mt-1 text-2xl font-bold">{{ set.title }}</h1>
-    <p v-if="set.description" class="text-gray-500">{{ set.description }}</p>
+    <p v-if="set.description" class="text-gray-500 dark:text-gray-400">{{ set.description }}</p>
 
     <div v-if="progressStats.total" class="my-3">
-      <div class="flex h-2 overflow-hidden rounded bg-gray-200">
+      <div class="flex h-2 overflow-hidden rounded bg-gray-200 dark:bg-gray-800">
         <div
           class="bg-green-500"
           :style="{ width: `${(progressStats.learned / progressStats.total) * 100}%` }"
@@ -117,9 +117,9 @@ function openStudy() {
         />
       </div>
       <div class="mt-1.5 flex gap-4 text-xs">
-        <span class="text-green-600">● {{ progressStats.learned }} learned</span>
-        <span class="text-amber-600">● {{ progressStats.learning }} learning</span>
-        <span class="text-gray-400">● {{ progressStats.fresh }} new</span>
+        <span class="text-green-600 dark:text-green-400">● {{ progressStats.learned }} learned</span>
+        <span class="text-amber-600 dark:text-amber-400">● {{ progressStats.learning }} learning</span>
+        <span class="text-gray-400 dark:text-gray-500">● {{ progressStats.fresh }} new</span>
       </div>
     </div>
 
@@ -150,17 +150,19 @@ function openStudy() {
         <button type="submit" class="btn btn-primary" :disabled="addingCard">Add card</button>
       </form>
 
+      <ImportCards :set-id="setId" @imported="refresh" />
+
       <ul class="flex flex-col gap-2">
         <li
           v-for="card in set.cards"
           :key="card.id"
-          class="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2"
+          class="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-800"
         >
           <span class="font-semibold">{{ card.term }}</span>
-          <span class="mx-4 flex-1 text-gray-600">{{ card.definition }}</span>
+          <span class="mx-4 flex-1 text-gray-600 dark:text-gray-300">{{ card.definition }}</span>
           <button type="button" class="btn px-2 py-1 text-xs" @click="removeCard(card.id)">Delete</button>
         </li>
-        <li v-if="!set.cards.length" class="py-2 text-center text-gray-400">
+        <li v-if="!set.cards.length" class="py-2 text-center text-gray-400 dark:text-gray-500">
           No cards yet — add one above.
         </li>
       </ul>
@@ -178,7 +180,7 @@ function openStudy() {
 
       <div v-else class="flex flex-col gap-4">
         <div>
-          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase">Mode</span>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Mode</span>
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
@@ -218,7 +220,7 @@ function openStudy() {
         </div>
 
         <div>
-          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase">Cards</span>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Cards</span>
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
@@ -241,7 +243,7 @@ function openStudy() {
 
         <!-- Match shows both sides at once, so direction doesn't apply. -->
         <div v-if="studyMode !== 'match'">
-          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase">Direction</span>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Direction</span>
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
@@ -263,23 +265,23 @@ function openStudy() {
         </div>
 
         <div v-if="trickyCards.length">
-          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase">Tricky words</span>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Tricky words</span>
           <ul class="flex flex-col gap-1.5">
             <li
               v-for="card in trickyCards"
               :key="card.id"
-              class="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm"
+              class="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm dark:border-amber-900 dark:bg-amber-950"
             >
               <span class="font-semibold">{{ card.term }}</span>
-              <span class="flex-1 text-gray-500">{{ card.definition }}</span>
-              <span class="whitespace-nowrap text-amber-600">missed ×{{ card.progress!.lapses }}</span>
+              <span class="flex-1 text-gray-500 dark:text-gray-400">{{ card.definition }}</span>
+              <span class="whitespace-nowrap text-amber-600 dark:text-amber-400">missed ×{{ card.progress!.lapses }}</span>
             </li>
           </ul>
         </div>
 
         <p
           v-if="queueType === 'due' && !dueCards.length"
-          class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700"
+          class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
         >
           🎉 Nothing to review right now — everything is scheduled for later. Come back
           tomorrow, or practice all cards.
@@ -296,8 +298,8 @@ function openStudy() {
       </div>
     </template>
   </div>
-  <div v-else class="mt-12 text-center text-gray-500">
+  <div v-else class="mt-12 text-center text-gray-500 dark:text-gray-400">
     <p>{{ error?.statusCode === 404 ? "Set not found." : "Failed to load this set." }}</p>
-    <NuxtLink to="/" class="text-blue-600 hover:underline">&larr; My sets</NuxtLink>
+    <NuxtLink to="/" class="text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
   </div>
 </template>

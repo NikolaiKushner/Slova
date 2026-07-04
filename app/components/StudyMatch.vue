@@ -87,16 +87,16 @@ function tileClass(tile: Tile) {
   if (matched.value.has(tile.cardId))
     return "invisible";
   if (wrongPair.value.includes(tile.key))
-    return "border-red-500 bg-red-50 text-red-700";
+    return "border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300";
   if (selected.value?.key === tile.key)
-    return "border-blue-600 bg-blue-50 text-blue-700";
-  return "border-gray-200 bg-white hover:bg-gray-50";
+    return "border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300";
+  return "border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800";
 }
 </script>
 
 <template>
   <div>
-    <div class="mb-3 flex items-center justify-between text-sm text-gray-500">
+    <div class="mb-3 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
       <span>Match each term with its definition</span>
       <span v-if="rounds.length > 1">Round {{ roundIndex + 1 }} / {{ rounds.length }}</span>
     </div>

@@ -64,9 +64,9 @@ onMounted(() => inputEl.value?.focus());
 
 <template>
   <div>
-    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl">
+    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl dark:border-gray-800">
       <p>{{ front }}</p>
-      <span class="mt-3 block text-xs text-gray-400">Type the answer</span>
+      <span class="mt-3 block text-xs text-gray-400 dark:text-gray-500">Type the answer</span>
     </div>
 
     <form class="mt-4 flex gap-2" @submit.prevent="submit">
@@ -88,17 +88,17 @@ onMounted(() => inputEl.value?.focus());
     <button
       v-if="!result"
       type="button"
-      class="mt-2 cursor-pointer text-sm text-gray-500 underline"
+      class="mt-2 cursor-pointer text-sm text-gray-500 underline dark:text-gray-400"
       @click="giveUp"
     >
       I don't know
     </button>
 
-    <p v-if="result === 'exact'" class="mt-4 text-green-600">Correct!</p>
-    <p v-else-if="result === 'typo'" class="mt-4 text-amber-600">
+    <p v-if="result === 'exact'" class="mt-4 text-green-600 dark:text-green-400">Correct!</p>
+    <p v-else-if="result === 'typo'" class="mt-4 text-amber-600 dark:text-amber-400">
       Close enough — watch the spelling: <strong>{{ answer }}</strong>
     </p>
-    <p v-else-if="result === 'wrong'" class="mt-4 text-red-600">
+    <p v-else-if="result === 'wrong'" class="mt-4 text-red-600 dark:text-red-400">
       The answer is <strong>{{ answer }}</strong>
     </p>
   </div>

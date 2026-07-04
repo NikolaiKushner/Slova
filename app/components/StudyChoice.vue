@@ -14,10 +14,11 @@ function pick(option: string) {
 }
 
 function optionClass(option: string) {
-  if (!answered.value) return "border-gray-200 bg-white hover:bg-gray-50";
-  if (option === props.answer) return "border-green-500 bg-green-50";
-  if (option === selected.value) return "border-red-500 bg-red-50";
-  return "border-gray-200 bg-white opacity-50";
+  if (!answered.value)
+    return "border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800";
+  if (option === props.answer) return "border-green-500 bg-green-50 dark:bg-green-950";
+  if (option === selected.value) return "border-red-500 bg-red-50 dark:bg-red-950";
+  return "border-gray-200 bg-white opacity-50 dark:border-gray-700 dark:bg-gray-900";
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -37,9 +38,9 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 <template>
   <div>
-    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl">
+    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl dark:border-gray-800">
       <p>{{ front }}</p>
-      <span class="mt-3 block text-xs text-gray-400">Pick the right answer</span>
+      <span class="mt-3 block text-xs text-gray-400 dark:text-gray-500">Pick the right answer</span>
     </div>
 
     <div class="mt-4 grid grid-cols-2 gap-2">
@@ -56,8 +57,8 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
     </div>
 
     <div v-if="answered" class="mt-4 flex items-center justify-between">
-      <p v-if="selected === answer" class="text-green-600">Correct!</p>
-      <p v-else class="text-red-600">
+      <p v-if="selected === answer" class="text-green-600 dark:text-green-400">Correct!</p>
+      <p v-else class="text-red-600 dark:text-red-400">
         Not quite — the answer is <strong>{{ answer }}</strong>
       </p>
       <button type="button" class="btn px-6" @click="emit('next')">

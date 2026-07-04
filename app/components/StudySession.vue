@@ -105,9 +105,9 @@ function finishMatch() {
     />
 
     <template v-else-if="!finished && current">
-      <div class="mb-3 flex items-center gap-3 text-sm text-gray-500">
+      <div class="mb-3 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
         <span>{{ index + 1 }} / {{ queue.length }}</span>
-        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
           <div
             class="h-full bg-blue-500 transition-[width] duration-200"
             :style="{ width: `${(index / queue.length) * 100}%` }"
@@ -145,11 +145,11 @@ function finishMatch() {
     <div v-else class="py-8 text-center">
       <h2 class="text-xl font-bold">Session complete</h2>
       <ul class="my-4 flex justify-center gap-6">
-        <li class="text-green-600">Knew it: {{ summary.good }}</li>
-        <li class="text-amber-600">Hard: {{ summary.hard }}</li>
-        <li class="text-red-600">Didn't know: {{ summary.again }}</li>
+        <li class="text-green-600 dark:text-green-400">Knew it: {{ summary.good }}</li>
+        <li class="text-amber-600 dark:text-amber-400">Hard: {{ summary.hard }}</li>
+        <li class="text-red-600 dark:text-red-400">Didn't know: {{ summary.again }}</li>
       </ul>
-      <p class="mb-6 text-sm text-gray-500">
+      <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
         Cards you missed will come back sooner; cards you knew will wait longer.
       </p>
       <button type="button" class="btn btn-primary px-8" @click="emit('done')">Done</button>

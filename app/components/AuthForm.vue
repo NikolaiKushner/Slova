@@ -48,7 +48,7 @@ async function submit() {
       />
       <button type="submit" class="btn btn-primary" :disabled="submitting">{{ submitLabel }}</button>
     </form>
-    <p v-if="error" class="text-red-600">{{ error }}</p>
+    <p v-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
     <p class="text-sm"><slot /></p>
   </div>
 </template>

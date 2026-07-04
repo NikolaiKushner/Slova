@@ -23,11 +23,11 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 <template>
   <div>
     <div
-      class="cursor-pointer rounded-xl border border-gray-200 px-4 py-16 text-center text-2xl select-none"
+      class="cursor-pointer rounded-xl border border-gray-200 px-4 py-16 text-center text-2xl select-none dark:border-gray-800"
       @click="flipped = !flipped"
     >
       <p>{{ flipped ? back : front }}</p>
-      <span class="mt-4 block text-xs text-gray-400">
+      <span class="mt-4 block text-xs text-gray-400 dark:text-gray-500">
         {{ flipped ? "How well did you know it?" : "Click or press Space to flip" }}
       </span>
     </div>
@@ -35,7 +35,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
     <div v-if="flipped" class="mt-4 flex gap-2">
       <button
         type="button"
-        class="btn flex-1 border-red-200 bg-red-50 py-2.5 text-base hover:bg-red-100"
+        class="btn flex-1 border-red-200 bg-red-50 py-2.5 text-base hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:hover:bg-red-900"
         :disabled="saving"
         @click="emit('rate', 'again')"
       >
@@ -43,7 +43,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
       </button>
       <button
         type="button"
-        class="btn flex-1 border-amber-200 bg-amber-50 py-2.5 text-base hover:bg-amber-100"
+        class="btn flex-1 border-amber-200 bg-amber-50 py-2.5 text-base hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:hover:bg-amber-900"
         :disabled="saving"
         @click="emit('rate', 'hard')"
       >
@@ -51,7 +51,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
       </button>
       <button
         type="button"
-        class="btn flex-1 border-green-200 bg-green-50 py-2.5 text-base hover:bg-green-100"
+        class="btn flex-1 border-green-200 bg-green-50 py-2.5 text-base hover:bg-green-100 dark:border-green-900 dark:bg-green-950 dark:hover:bg-green-900"
         :disabled="saving"
         @click="emit('rate', 'good')"
       >
