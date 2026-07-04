@@ -33,45 +33,22 @@ async function submit() {
 </script>
 
 <template>
-  <div class="auth-form">
-    <h1>{{ title }}</h1>
-    <form @submit.prevent="submit">
-      <input v-model="email" type="email" placeholder="Email" required autocomplete="email" />
+  <div class="mx-auto mt-16 flex max-w-xs flex-col gap-4">
+    <h1 class="text-2xl font-bold">{{ title }}</h1>
+    <form class="flex flex-col gap-2" @submit.prevent="submit">
+      <input v-model="email" class="input" type="email" placeholder="Email" required autocomplete="email" />
       <input
         v-model="password"
+        class="input"
         type="password"
         :placeholder="newPassword ? 'Password (min 8 characters)' : 'Password'"
         required
         :minlength="newPassword ? 8 : undefined"
         :autocomplete="newPassword ? 'new-password' : 'current-password'"
       />
-      <button type="submit" :disabled="submitting">{{ submitLabel }}</button>
+      <button type="submit" class="btn btn-primary" :disabled="submitting">{{ submitLabel }}</button>
     </form>
-    <p v-if="error" class="error">{{ error }}</p>
-    <p class="switch"><slot /></p>
+    <p v-if="error" class="text-red-600">{{ error }}</p>
+    <p class="text-sm"><slot /></p>
   </div>
 </template>
-
-<style scoped>
-.auth-form {
-  max-width: 320px;
-  margin: 4rem auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.auth-form form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-input {
-  padding: 0.5rem;
-}
-.error {
-  color: #dc2626;
-}
-.switch {
-  font-size: 0.875rem;
-}
-</style>

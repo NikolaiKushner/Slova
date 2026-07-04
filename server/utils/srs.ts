@@ -5,7 +5,7 @@
 export const RATINGS = ["again", "hard", "good"] as const;
 export type Rating = (typeof RATINGS)[number];
 
-export const STUDY_MODES = ["flashcards", "choice", "typing"] as const;
+export const STUDY_MODES = ["flashcards", "choice", "typing", "match"] as const;
 export type StudyMode = (typeof STUDY_MODES)[number];
 
 export interface SrsState {

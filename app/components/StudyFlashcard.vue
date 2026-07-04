@@ -22,69 +22,41 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 <template>
   <div>
-    <div class="flashcard" @click="flipped = !flipped">
+    <div
+      class="cursor-pointer rounded-xl border border-gray-200 px-4 py-16 text-center text-2xl select-none"
+      @click="flipped = !flipped"
+    >
       <p>{{ flipped ? back : front }}</p>
-      <span class="hint">{{ flipped ? "How well did you know it?" : "Click or press Space to flip" }}</span>
+      <span class="mt-4 block text-xs text-gray-400">
+        {{ flipped ? "How well did you know it?" : "Click or press Space to flip" }}
+      </span>
     </div>
 
-    <div v-if="flipped" class="ratings">
-      <button type="button" class="again" :disabled="saving" @click="emit('rate', 'again')">
-        Again <kbd>1</kbd>
+    <div v-if="flipped" class="mt-4 flex gap-2">
+      <button
+        type="button"
+        class="btn flex-1 border-red-200 bg-red-50 py-2.5 text-base hover:bg-red-100"
+        :disabled="saving"
+        @click="emit('rate', 'again')"
+      >
+        Again <kbd class="text-xs text-gray-400">1</kbd>
       </button>
-      <button type="button" class="hard" :disabled="saving" @click="emit('rate', 'hard')">
-        Hard <kbd>2</kbd>
+      <button
+        type="button"
+        class="btn flex-1 border-amber-200 bg-amber-50 py-2.5 text-base hover:bg-amber-100"
+        :disabled="saving"
+        @click="emit('rate', 'hard')"
+      >
+        Hard <kbd class="text-xs text-gray-400">2</kbd>
       </button>
-      <button type="button" class="good" :disabled="saving" @click="emit('rate', 'good')">
-        Good <kbd>3</kbd>
+      <button
+        type="button"
+        class="btn flex-1 border-green-200 bg-green-50 py-2.5 text-base hover:bg-green-100"
+        :disabled="saving"
+        @click="emit('rate', 'good')"
+      >
+        Good <kbd class="text-xs text-gray-400">3</kbd>
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.flashcard {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 4rem 1rem;
-  text-align: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  user-select: none;
-}
-.flashcard .hint {
-  display: block;
-  margin-top: 1rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-.ratings {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.ratings button {
-  flex: 1;
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.ratings kbd {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-left: 0.25rem;
-}
-.ratings .again {
-  background: #fef2f2;
-  border-color: #fecaca;
-}
-.ratings .hard {
-  background: #fffbeb;
-  border-color: #fde68a;
-}
-.ratings .good {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-}
-</style>

@@ -64,89 +64,42 @@ onMounted(() => inputEl.value?.focus());
 
 <template>
   <div>
-    <div class="prompt">
+    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl">
       <p>{{ front }}</p>
-      <span class="hint">Type the answer</span>
+      <span class="mt-3 block text-xs text-gray-400">Type the answer</span>
     </div>
 
-    <form class="answer-form" @submit.prevent="submit">
+    <form class="mt-4 flex gap-2" @submit.prevent="submit">
       <input
         ref="inputEl"
         v-model="input"
+        class="input flex-1 py-2.5 text-base"
         :readonly="result !== null"
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"
         placeholder="Your answer…"
       />
-      <button v-if="!result" type="submit">Check</button>
-      <button v-else type="submit">Next <kbd>Enter</kbd></button>
+      <button v-if="!result" type="submit" class="btn btn-primary px-6">Check</button>
+      <button v-else type="submit" class="btn btn-primary px-6">
+        Next <kbd class="text-xs opacity-70">Enter</kbd>
+      </button>
     </form>
-    <button v-if="!result" type="button" class="give-up" @click="giveUp">I don't know</button>
+    <button
+      v-if="!result"
+      type="button"
+      class="mt-2 cursor-pointer text-sm text-gray-500 underline"
+      @click="giveUp"
+    >
+      I don't know
+    </button>
 
-    <p v-if="result === 'exact'" class="feedback ok">Correct!</p>
-    <p v-else-if="result === 'typo'" class="feedback typo">
+    <p v-if="result === 'exact'" class="mt-4 text-green-600">Correct!</p>
+    <p v-else-if="result === 'typo'" class="mt-4 text-amber-600">
       Close enough — watch the spelling: <strong>{{ answer }}</strong>
     </p>
-    <p v-else-if="result === 'wrong'" class="feedback miss">
+    <p v-else-if="result === 'wrong'" class="mt-4 text-red-600">
       The answer is <strong>{{ answer }}</strong>
     </p>
   </div>
 </template>
-
-<style scoped>
-.prompt {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 2.5rem 1rem;
-  text-align: center;
-  font-size: 1.5rem;
-}
-.prompt .hint {
-  display: block;
-  margin-top: 0.75rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-.answer-form {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.answer-form input {
-  flex: 1;
-  padding: 0.6rem 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-.answer-form button {
-  padding: 0.6rem 1.5rem;
-}
-.answer-form kbd {
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-.give-up {
-  margin-top: 0.5rem;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.875rem;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-.feedback {
-  margin-top: 1rem;
-}
-.feedback.ok {
-  color: #16a34a;
-}
-.feedback.typo {
-  color: #d97706;
-}
-.feedback.miss {
-  color: #dc2626;
-}
-</style>
