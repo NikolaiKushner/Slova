@@ -21,15 +21,29 @@ interface StarterPack {
   slug: string;
   title: string;
   description: string;
+  level: "A1" | "A2" | "B1";
   cardCount: number;
   added: boolean;
 }
+
+const LEVELS = [
+  { code: "A1", label: "Beginner" },
+  { code: "A2", label: "Elementary" },
+  { code: "B1", label: "Intermediate" },
+] as const;
 
 const { data: sets, refresh } = await useFetch<QuizSet[]>("/api/sets");
 const { data: stats } = await useFetch<Stats>("/api/stats");
 const { data: packs, refresh: refreshPacks } = await useFetch<StarterPack[]>("/api/starter-packs");
 
 const suggestedPacks = computed(() => (packs.value ?? []).filter((pack) => !pack.added));
+
+const packsByLevel = computed(() =>
+  LEVELS.map((level) => ({
+    ...level,
+    packs: suggestedPacks.value.filter((pack) => pack.level === level.code),
+  })).filter((group) => group.packs.length),
+);
 const addingPack = ref<string | null>(null);
 
 async function addPack(slug: string) {
@@ -127,29 +141,39 @@ async function removeSet(id: number) {
       <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
         Curated English vocabulary to get you going — add a pack and start studying right away.
       </p>
-      <ul class="flex flex-col gap-2">
-        <li
-          v-for="pack in suggestedPacks"
-          :key="pack.slug"
-          class="flex items-center justify-between gap-3 rounded-md border border-dashed border-gray-300 px-3 py-2 dark:border-gray-700"
-        >
-          <div class="min-w-0">
-            <span class="font-medium">{{ pack.title }}</span>
-            <span class="ml-2 text-xs whitespace-nowrap text-gray-400 dark:text-gray-500">
-              {{ pack.cardCount }} words
-            </span>
-            <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ pack.description }}</p>
-          </div>
-          <button
-            type="button"
-            class="btn shrink-0"
-            :disabled="addingPack === pack.slug"
-            @click="addPack(pack.slug)"
+      <div v-for="group in packsByLevel" :key="group.code" class="mb-4">
+        <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <span
+            class="rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-bold text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300"
           >
-            + Add
-          </button>
-        </li>
-      </ul>
+            {{ group.code }}
+          </span>
+          {{ group.label }}
+        </h3>
+        <ul class="flex flex-col gap-2">
+          <li
+            v-for="pack in group.packs"
+            :key="pack.slug"
+            class="flex items-center justify-between gap-3 rounded-md border border-dashed border-gray-300 px-3 py-2 dark:border-gray-700"
+          >
+            <div class="min-w-0">
+              <span class="font-medium">{{ pack.title }}</span>
+              <span class="ml-2 text-xs whitespace-nowrap text-gray-400 dark:text-gray-500">
+                {{ pack.cardCount }} words
+              </span>
+              <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ pack.description }}</p>
+            </div>
+            <button
+              type="button"
+              class="btn shrink-0"
+              :disabled="addingPack === pack.slug"
+              @click="addPack(pack.slug)"
+            >
+              + Add
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>

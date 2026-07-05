@@ -12,9 +12,24 @@ interface ParsedCard {
   definition: string;
 }
 
+// Strip surrounding CSV quotes and unescape doubled quotes inside them.
+function unquote(value: string): string {
+  const trimmed = value.trim();
+  const quoted = trimmed.match(/^"(.*)"$/s);
+  return (quoted ? quoted[1]!.replace(/""/g, '"') : trimmed).trim();
+}
+
 // One card per line. The separator is whatever comes first: tab, semicolon,
-// comma, or " - ". Quotes around CSV fields are stripped.
+// comma, or " - ". A quoted first field may itself contain separators
+// (exported CSV does this), so its closing quote is located first.
 function parseLine(line: string): ParsedCard | null {
+  const quotedField = line.match(/^("(?:[^"]|"")*")\s*[,;\t]\s*(.+)$/s);
+  if (quotedField) {
+    const term = unquote(quotedField[1]!);
+    const definition = unquote(quotedField[2]!);
+    return term && definition ? { term, definition } : null;
+  }
+
   const separators = ["\t", ";", ",", " - ", " – "];
   let splitAt = -1;
   let sepLength = 0;
@@ -26,7 +41,6 @@ function parseLine(line: string): ParsedCard | null {
     }
   }
   if (splitAt === -1) return null;
-  const unquote = (value: string) => value.trim().replace(/^"(.*)"$/s, "$1").trim();
   const term = unquote(line.slice(0, splitAt));
   const definition = unquote(line.slice(splitAt + sepLength));
   if (!term || !definition) return null;

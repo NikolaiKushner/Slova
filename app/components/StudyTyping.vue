@@ -65,7 +65,7 @@ onMounted(() => inputEl.value?.focus());
 <template>
   <div>
     <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl dark:border-gray-800">
-      <p>{{ front }}</p>
+      <p>{{ front }} <SpeakButton :text="front" /></p>
       <span class="mt-3 block text-xs text-gray-400 dark:text-gray-500">Type the answer</span>
     </div>
 

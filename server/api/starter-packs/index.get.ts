@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     slug: pack.slug,
     title: pack.title,
     description: pack.description,
+    level: pack.level,
     cardCount: pack.cards.length,
     added: ownedTitles.has(pack.title),
   }));

@@ -141,6 +141,14 @@ function openStudy() {
       >
         Study
       </button>
+      <a
+        v-if="mode === 'edit' && set.cards.length"
+        class="btn ml-auto"
+        :href="`/api/sets/${setId}/export`"
+        download
+      >
+        ⬇ Export CSV
+      </a>
     </div>
 
     <template v-if="mode === 'edit'">
@@ -158,6 +166,7 @@ function openStudy() {
           :key="card.id"
           class="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-800"
         >
+          <SpeakButton :text="card.term" />
           <span class="font-semibold">{{ card.term }}</span>
           <span class="mx-4 flex-1 text-gray-600 dark:text-gray-300">{{ card.definition }}</span>
           <button type="button" class="btn px-2 py-1 text-xs" @click="removeCard(card.id)">Delete</button>
