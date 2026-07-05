@@ -49,8 +49,9 @@ const direction = ref<"term-first" | "definition-first">("term-first");
 const queueType = ref<"due" | "all">("due");
 const sessionCards = ref<StudyCard[] | null>(null);
 
-// Multiple choice needs at least one wrong option to pick from.
-const choiceAvailable = computed(() => (set.value?.cards.length ?? 0) >= 2);
+// Multiple choice needs at least one wrong option to pick from, and matching
+// needs at least two pairs on the board.
+const pairModesAvailable = computed(() => (set.value?.cards.length ?? 0) >= 2);
 
 const progressStats = computed(() => {
   const cards = set.value?.cards ?? [];
@@ -100,33 +101,41 @@ function openStudy() {
 
 <template>
   <div v-if="set">
-    <NuxtLink to="/">&larr; My sets</NuxtLink>
-    <h1>{{ set.title }}</h1>
-    <p v-if="set.description" class="description">{{ set.description }}</p>
+    <NuxtLink to="/" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
+    <h1 class="mt-1 text-2xl font-bold">{{ set.title }}</h1>
+    <p v-if="set.description" class="text-gray-500 dark:text-gray-400">{{ set.description }}</p>
 
-    <div v-if="progressStats.total" class="set-progress">
-      <div class="bar">
+    <div v-if="progressStats.total" class="my-3">
+      <div class="flex h-2 overflow-hidden rounded bg-gray-200 dark:bg-gray-800">
         <div
-          class="segment learned"
+          class="bg-green-500"
           :style="{ width: `${(progressStats.learned / progressStats.total) * 100}%` }"
         />
         <div
-          class="segment learning"
+          class="bg-amber-500"
           :style="{ width: `${(progressStats.learning / progressStats.total) * 100}%` }"
         />
       </div>
-      <div class="legend">
-        <span class="learned">● {{ progressStats.learned }} learned</span>
-        <span class="learning">● {{ progressStats.learning }} learning</span>
-        <span class="fresh">● {{ progressStats.fresh }} new</span>
+      <div class="mt-1.5 flex gap-4 text-xs">
+        <span class="text-green-600 dark:text-green-400">● {{ progressStats.learned }} learned</span>
+        <span class="text-amber-600 dark:text-amber-400">● {{ progressStats.learning }} learning</span>
+        <span class="text-gray-400 dark:text-gray-500">● {{ progressStats.fresh }} new</span>
       </div>
     </div>
 
-    <div class="mode-switch">
-      <button type="button" :class="{ active: mode === 'edit' }" @click="mode = 'edit'">Edit</button>
+    <div class="my-4 flex gap-2">
       <button
         type="button"
-        :class="{ active: mode === 'study' }"
+        class="btn"
+        :class="{ 'btn-active': mode === 'edit' }"
+        @click="mode = 'edit'"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="btn"
+        :class="{ 'btn-active': mode === 'study' }"
         :disabled="!set.cards.length"
         @click="openStudy"
       >
@@ -135,19 +144,27 @@ function openStudy() {
     </div>
 
     <template v-if="mode === 'edit'">
-      <form class="new-card" @submit.prevent="addCard">
-        <input v-model="term" placeholder="Term" required />
-        <input v-model="definition" placeholder="Definition" required />
-        <button type="submit" :disabled="addingCard">Add card</button>
+      <form class="mb-6 flex gap-2" @submit.prevent="addCard">
+        <input v-model="term" class="input flex-1" placeholder="Term" required />
+        <input v-model="definition" class="input flex-1" placeholder="Definition" required />
+        <button type="submit" class="btn btn-primary" :disabled="addingCard">Add card</button>
       </form>
 
-      <ul class="cards">
-        <li v-for="card in set.cards" :key="card.id">
-          <span class="term">{{ card.term }}</span>
-          <span class="definition">{{ card.definition }}</span>
-          <button type="button" @click="removeCard(card.id)">Delete</button>
+      <ImportCards :set-id="setId" @imported="refresh" />
+
+      <ul class="flex flex-col gap-2">
+        <li
+          v-for="card in set.cards"
+          :key="card.id"
+          class="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-800"
+        >
+          <span class="font-semibold">{{ card.term }}</span>
+          <span class="mx-4 flex-1 text-gray-600 dark:text-gray-300">{{ card.definition }}</span>
+          <button type="button" class="btn px-2 py-1 text-xs" @click="removeCard(card.id)">Delete</button>
         </li>
-        <li v-if="!set.cards.length" class="empty">No cards yet — add one above.</li>
+        <li v-if="!set.cards.length" class="py-2 text-center text-gray-400 dark:text-gray-500">
+          No cards yet — add one above.
+        </li>
       </ul>
     </template>
 
@@ -161,48 +178,62 @@ function openStudy() {
         @done="endSession"
       />
 
-      <div v-else class="study-setup">
-        <div class="option-group">
-          <span class="label">Mode</span>
-          <div class="options">
+      <div v-else class="flex flex-col gap-4">
+        <div>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Mode</span>
+          <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              :class="{ active: studyMode === 'flashcards' }"
+              class="btn"
+              :class="{ 'btn-active': studyMode === 'flashcards' }"
               @click="studyMode = 'flashcards'"
             >
               🃏 Flashcards
             </button>
             <button
               type="button"
-              :class="{ active: studyMode === 'choice' }"
-              :disabled="!choiceAvailable"
+              class="btn"
+              :class="{ 'btn-active': studyMode === 'choice' }"
+              :disabled="!pairModesAvailable"
               @click="studyMode = 'choice'"
             >
               ✅ Multiple choice
             </button>
             <button
               type="button"
-              :class="{ active: studyMode === 'typing' }"
+              class="btn"
+              :class="{ 'btn-active': studyMode === 'typing' }"
               @click="studyMode = 'typing'"
             >
               ⌨️ Typing
             </button>
+            <button
+              type="button"
+              class="btn"
+              :class="{ 'btn-active': studyMode === 'match' }"
+              :disabled="!pairModesAvailable"
+              @click="studyMode = 'match'"
+            >
+              🧩 Match
+            </button>
           </div>
         </div>
 
-        <div class="option-group">
-          <span class="label">Cards</span>
-          <div class="options">
+        <div>
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Cards</span>
+          <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              :class="{ active: queueType === 'due' }"
+              class="btn"
+              :class="{ 'btn-active': queueType === 'due' }"
               @click="queueType = 'due'"
             >
               Due for review ({{ dueCards.length }})
             </button>
             <button
               type="button"
-              :class="{ active: queueType === 'all' }"
+              class="btn"
+              :class="{ 'btn-active': queueType === 'all' }"
               @click="queueType = 'all'"
             >
               All cards ({{ set.cards.length }})
@@ -210,19 +241,22 @@ function openStudy() {
           </div>
         </div>
 
-        <div class="option-group">
-          <span class="label">Direction</span>
-          <div class="options">
+        <!-- Match shows both sides at once, so direction doesn't apply. -->
+        <div v-if="studyMode !== 'match'">
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Direction</span>
+          <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              :class="{ active: direction === 'term-first' }"
+              class="btn"
+              :class="{ 'btn-active': direction === 'term-first' }"
               @click="direction = 'term-first'"
             >
               Term &rarr; Definition
             </button>
             <button
               type="button"
-              :class="{ active: direction === 'definition-first' }"
+              class="btn"
+              :class="{ 'btn-active': direction === 'definition-first' }"
               @click="direction = 'definition-first'"
             >
               Definition &rarr; Term
@@ -230,25 +264,32 @@ function openStudy() {
           </div>
         </div>
 
-        <div v-if="trickyCards.length" class="tricky">
-          <span class="label">Tricky words</span>
-          <ul>
-            <li v-for="card in trickyCards" :key="card.id">
-              <span class="term">{{ card.term }}</span>
-              <span class="definition">{{ card.definition }}</span>
-              <span class="misses">missed ×{{ card.progress!.lapses }}</span>
+        <div v-if="trickyCards.length">
+          <span class="mb-1.5 block text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">Tricky words</span>
+          <ul class="flex flex-col gap-1.5">
+            <li
+              v-for="card in trickyCards"
+              :key="card.id"
+              class="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm dark:border-amber-900 dark:bg-amber-950"
+            >
+              <span class="font-semibold">{{ card.term }}</span>
+              <span class="flex-1 text-gray-500 dark:text-gray-400">{{ card.definition }}</span>
+              <span class="whitespace-nowrap text-amber-600 dark:text-amber-400">missed ×{{ card.progress!.lapses }}</span>
             </li>
           </ul>
         </div>
 
-        <p v-if="queueType === 'due' && !dueCards.length" class="all-done">
+        <p
+          v-if="queueType === 'due' && !dueCards.length"
+          class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300"
+        >
           🎉 Nothing to review right now — everything is scheduled for later. Come back
           tomorrow, or practice all cards.
         </p>
 
         <button
           type="button"
-          class="start"
+          class="btn btn-primary py-2.5 text-base"
           :disabled="queueType === 'due' ? !dueCards.length : !set.cards.length"
           @click="startSession"
         >
@@ -257,175 +298,8 @@ function openStudy() {
       </div>
     </template>
   </div>
-  <div v-else class="not-found">
+  <div v-else class="mt-12 text-center text-gray-500 dark:text-gray-400">
     <p>{{ error?.statusCode === 404 ? "Set not found." : "Failed to load this set." }}</p>
-    <NuxtLink to="/">&larr; My sets</NuxtLink>
+    <NuxtLink to="/" class="text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
   </div>
 </template>
-
-<style scoped>
-.not-found {
-  text-align: center;
-  color: #6b7280;
-  margin-top: 3rem;
-}
-.description {
-  color: #6b7280;
-}
-.set-progress {
-  margin: 0.75rem 0;
-}
-.set-progress .bar {
-  display: flex;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.set-progress .segment.learned {
-  background: #22c55e;
-}
-.set-progress .segment.learning {
-  background: #f59e0b;
-}
-.set-progress .legend {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.35rem;
-  font-size: 0.75rem;
-}
-.set-progress .legend .learned {
-  color: #16a34a;
-}
-.set-progress .legend .learning {
-  color: #d97706;
-}
-.set-progress .legend .fresh {
-  color: #9ca3af;
-}
-.tricky .label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7280;
-  margin-bottom: 0.35rem;
-}
-.tricky ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-.tricky li {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid #fde68a;
-  background: #fffbeb;
-  border-radius: 6px;
-  font-size: 0.875rem;
-}
-.tricky .definition {
-  color: #6b7280;
-  flex: 1;
-}
-.tricky .misses {
-  color: #d97706;
-  white-space: nowrap;
-}
-.mode-switch {
-  display: flex;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-.mode-switch button.active {
-  font-weight: 700;
-}
-.new-card {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-.new-card input {
-  flex: 1;
-  padding: 0.4rem 0.6rem;
-}
-.cards {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.cards li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-}
-.term {
-  font-weight: 600;
-}
-.definition {
-  color: #4b5563;
-  flex: 1;
-  margin: 0 1rem;
-}
-.empty {
-  color: #9ca3af;
-  border: none;
-  justify-content: center;
-}
-.study-setup {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.option-group .label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6b7280;
-  margin-bottom: 0.35rem;
-}
-.options {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.options button {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-}
-.options button.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  font-weight: 600;
-}
-.options button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.all-done {
-  color: #16a34a;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-}
-.start {
-  padding: 0.6rem;
-  font-size: 1rem;
-}
-</style>

@@ -14,12 +14,11 @@ function pick(option: string) {
 }
 
 function optionClass(option: string) {
-  if (!answered.value) return {};
-  return {
-    correct: option === props.answer,
-    wrong: option === selected.value && option !== props.answer,
-    faded: option !== props.answer && option !== selected.value,
-  };
+  if (!answered.value)
+    return "border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800";
+  if (option === props.answer) return "border-green-500 bg-green-50 dark:bg-green-950";
+  if (option === selected.value) return "border-red-500 bg-red-50 dark:bg-red-950";
+  return "border-gray-200 bg-white opacity-50 dark:border-gray-700 dark:bg-gray-900";
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -39,95 +38,32 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 <template>
   <div>
-    <div class="prompt">
+    <div class="rounded-xl border border-gray-200 px-4 py-10 text-center text-2xl dark:border-gray-800">
       <p>{{ front }}</p>
-      <span class="hint">Pick the right answer</span>
+      <span class="mt-3 block text-xs text-gray-400 dark:text-gray-500">Pick the right answer</span>
     </div>
 
-    <div class="choices">
+    <div class="mt-4 grid grid-cols-2 gap-2">
       <button
         v-for="(option, i) in options"
         :key="option"
         type="button"
+        class="cursor-pointer rounded-lg border p-3 text-left text-base"
         :class="optionClass(option)"
         @click="pick(option)"
       >
-        <kbd>{{ i + 1 }}</kbd> {{ option }}
+        <kbd class="mr-1 text-xs text-gray-400">{{ i + 1 }}</kbd> {{ option }}
       </button>
     </div>
 
-    <div v-if="answered" class="feedback">
-      <p v-if="selected === answer" class="ok">Correct!</p>
-      <p v-else class="miss">
+    <div v-if="answered" class="mt-4 flex items-center justify-between">
+      <p v-if="selected === answer" class="text-green-600 dark:text-green-400">Correct!</p>
+      <p v-else class="text-red-600 dark:text-red-400">
         Not quite — the answer is <strong>{{ answer }}</strong>
       </p>
-      <button type="button" @click="emit('next')">Next <kbd>Enter</kbd></button>
+      <button type="button" class="btn px-6" @click="emit('next')">
+        Next <kbd class="text-xs text-gray-400">Enter</kbd>
+      </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.prompt {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 2.5rem 1rem;
-  text-align: center;
-  font-size: 1.5rem;
-}
-.prompt .hint {
-  display: block;
-  margin-top: 0.75rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-.choices {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.choices button {
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 1rem;
-  text-align: left;
-}
-.choices kbd {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-right: 0.35rem;
-}
-.choices .correct {
-  background: #f0fdf4;
-  border-color: #22c55e;
-}
-.choices .wrong {
-  background: #fef2f2;
-  border-color: #ef4444;
-}
-.choices .faded {
-  opacity: 0.5;
-}
-.feedback {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-}
-.feedback .ok {
-  color: #16a34a;
-}
-.feedback .miss {
-  color: #dc2626;
-}
-.feedback button {
-  padding: 0.5rem 1.5rem;
-}
-.feedback kbd {
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-</style>

@@ -16,7 +16,7 @@ export interface StudyCard {
 }
 
 export type Rating = "again" | "hard" | "good";
-export type StudyMode = "flashcards" | "choice" | "typing";
+export type StudyMode = "flashcards" | "choice" | "typing" | "match";
 
 const props = defineProps<{
   cards: StudyCard[];
@@ -56,19 +56,23 @@ const choiceOptions = computed(() => {
   return shuffle([answer, ...distractors]);
 });
 
+async function recordReview(card: StudyCard, rating: Rating) {
+  await $fetch(`/api/cards/${card.id}/review`, {
+    method: "POST",
+    body: { rating, mode: props.mode },
+  });
+  if (!firstAnswers.has(card.id)) {
+    firstAnswers.set(card.id, rating);
+    summary[rating] += 1;
+  }
+}
+
 async function submit(rating: Rating) {
   const card = current.value;
   if (!card || saving.value) return;
   saving.value = true;
   try {
-    await $fetch(`/api/cards/${card.id}/review`, {
-      method: "POST",
-      body: { rating, mode: props.mode },
-    });
-    if (!firstAnswers.has(card.id)) {
-      firstAnswers.set(card.id, rating);
-      summary[rating] += 1;
-    }
+    await recordReview(card, rating);
     // Failed cards come back at the end of the session until answered.
     if (rating === "again") queue.value.push(card);
   } finally {
@@ -84,14 +88,31 @@ async function rateAndAdvance(rating: Rating) {
   await submit(rating);
   advance();
 }
+
+// Match handles the whole queue at once, so its "next" ends the session.
+function finishMatch() {
+  index.value = queue.value.length;
+}
 </script>
 
 <template>
   <div>
-    <template v-if="!finished && current">
-      <div class="session-progress">
+    <StudyMatch
+      v-if="mode === 'match' && !finished"
+      :cards="queue"
+      @answered="recordReview"
+      @next="finishMatch"
+    />
+
+    <template v-else-if="!finished && current">
+      <div class="mb-3 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
         <span>{{ index + 1 }} / {{ queue.length }}</span>
-        <div class="bar"><div class="fill" :style="{ width: `${(index / queue.length) * 100}%` }" /></div>
+        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+          <div
+            class="h-full bg-blue-500 transition-[width] duration-200"
+            :style="{ width: `${(index / queue.length) * 100}%` }"
+          />
+        </div>
       </div>
 
       <StudyFlashcard
@@ -121,67 +142,17 @@ async function rateAndAdvance(rating: Rating) {
       />
     </template>
 
-    <div v-else class="summary">
-      <h2>Session complete</h2>
-      <ul>
-        <li class="good">Knew it: {{ summary.good }}</li>
-        <li class="hard">Hard: {{ summary.hard }}</li>
-        <li class="again">Didn't know: {{ summary.again }}</li>
+    <div v-else class="py-8 text-center">
+      <h2 class="text-xl font-bold">Session complete</h2>
+      <ul class="my-4 flex justify-center gap-6">
+        <li class="text-green-600 dark:text-green-400">Knew it: {{ summary.good }}</li>
+        <li class="text-amber-600 dark:text-amber-400">Hard: {{ summary.hard }}</li>
+        <li class="text-red-600 dark:text-red-400">Didn't know: {{ summary.again }}</li>
       </ul>
-      <p class="note">Cards you missed will come back sooner; cards you knew will wait longer.</p>
-      <button type="button" @click="emit('done')">Done</button>
+      <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        Cards you missed will come back sooner; cards you knew will wait longer.
+      </p>
+      <button type="button" class="btn btn-primary px-8" @click="emit('done')">Done</button>
     </div>
   </div>
 </template>
-
-<style scoped>
-.session-progress {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-.session-progress .bar {
-  flex: 1;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.session-progress .fill {
-  height: 100%;
-  background: #3b82f6;
-  transition: width 0.2s;
-}
-.summary {
-  text-align: center;
-  padding: 2rem 0;
-}
-.summary ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  margin: 1rem 0;
-}
-.summary .good {
-  color: #16a34a;
-}
-.summary .hard {
-  color: #d97706;
-}
-.summary .again {
-  color: #dc2626;
-}
-.summary .note {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
-}
-.summary button {
-  padding: 0.5rem 2rem;
-}
-</style>

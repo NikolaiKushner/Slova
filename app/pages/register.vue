@@ -10,6 +10,6 @@ definePageMeta({ middleware: "guest" });
     error-fallback="Registration failed"
     new-password
   >
-    Already have an account? <NuxtLink to="/login">Log in</NuxtLink>
+    Already have an account? <NuxtLink to="/login" class="text-blue-600 hover:underline dark:text-blue-400">Log in</NuxtLink>
   </AuthForm>
 </template>
