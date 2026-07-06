@@ -2,7 +2,9 @@
 // English. Packs are copied into a user's own sets, so editing a copy never
 // affects the catalog.
 
-export type PackLevel = "A1" | "A2" | "B1";
+export const PACK_LEVELS = ["A1", "A2", "B1"] as const;
+
+export type PackLevel = (typeof PACK_LEVELS)[number];
 
 export interface StarterPack {
   slug: string;

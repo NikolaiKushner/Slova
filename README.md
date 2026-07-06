@@ -13,8 +13,11 @@ same scheduler. The dashboard tracks due cards, a study-day streak, and
 per-set progress.
 
 Quality-of-life extras: CSV/text import and export of sets, curated
-English-Russian starter packs grouped by CEFR level (A1/A2/B1), word
-pronunciation via the browser's Web Speech API, and a dark theme.
+English-Russian starter packs grouped by CEFR level (A1/A2/B1) with a level
+picker at registration so matching packs are suggested first, a daily-reviews
+chart on the dashboard, word pronunciation via the browser's Web Speech API,
+a dark theme, and a PWA manifest + service worker so the app installs to a
+phone's home screen.
 
 ## Stack
 
@@ -102,7 +105,13 @@ docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
   distractors from the same set, and typed answers with typo tolerance —
   in either direction (term → definition or definition → term)
 - Progress & motivation: per-set learned/learning/new progress bar, "tricky
-  words" list, due-count badges, reviews-today counter, and a study-day streak
+  words" list, due-count badges, reviews-today counter, a study-day streak,
+  and a reviews-per-day chart for the last two weeks
+- Onboarding: an optional CEFR level picker (A1/A2/B1) at registration;
+  starter packs for the chosen level are recommended first on the dashboard
+- Installable PWA: web app manifest, icons, and a minimal service worker
+  (network-first, never caches `/api/`) so it can be added to a phone's home
+  screen and launched standalone
 
 ## Next steps
 
