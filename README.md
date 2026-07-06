@@ -7,9 +7,14 @@ mode — to demonstrate the pattern end to end.
 
 Studying uses spaced repetition (a simplified SM-2 scheduler, as in Anki):
 every answer is rated and the card's next review is scheduled further out the
-better you know it. Three study modes — flip cards with self-rating, multiple
-choice, and typed answers with typo tolerance — all feed the same scheduler.
-The dashboard tracks due cards, a study-day streak, and per-set progress.
+better you know it. Four study modes — flip cards with self-rating, multiple
+choice, typed answers with typo tolerance, and match-the-pairs — all feed the
+same scheduler. The dashboard tracks due cards, a study-day streak, and
+per-set progress.
+
+Quality-of-life extras: CSV/text import and export of sets, curated
+English-Russian starter packs grouped by CEFR level (A1/A2/B1), word
+pronunciation via the browser's Web Speech API, and a dark theme.
 
 ## Stack
 

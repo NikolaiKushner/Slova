@@ -26,7 +26,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
       class="cursor-pointer rounded-xl border border-gray-200 px-4 py-16 text-center text-2xl select-none dark:border-gray-800"
       @click="flipped = !flipped"
     >
-      <p>{{ flipped ? back : front }}</p>
+      <p>{{ flipped ? back : front }} <SpeakButton :text="flipped ? back : front" /></p>
       <span class="mt-4 block text-xs text-gray-400 dark:text-gray-500">
         {{ flipped ? "How well did you know it?" : "Click or press Space to flip" }}
       </span>

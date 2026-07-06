@@ -2,10 +2,13 @@
 // English. Packs are copied into a user's own sets, so editing a copy never
 // affects the catalog.
 
+export type PackLevel = "A1" | "A2" | "B1";
+
 export interface StarterPack {
   slug: string;
   title: string;
   description: string;
+  level: PackLevel;
   cards: { term: string; definition: string }[];
 }
 
@@ -14,6 +17,7 @@ export const STARTER_PACKS: StarterPack[] = [
     slug: "top-verbs",
     title: "Top English Verbs",
     description: "The most common verbs you'll meet everywhere",
+    level: "A1",
     cards: [
       { term: "be", definition: "быть" },
       { term: "have", definition: "иметь" },
@@ -51,6 +55,7 @@ export const STARTER_PACKS: StarterPack[] = [
     slug: "irregular-verbs",
     title: "Irregular Verbs",
     description: "Key irregular verbs with all three forms",
+    level: "A2",
     cards: [
       { term: "be — was/were — been", definition: "быть" },
       { term: "begin — began — begun", definition: "начинать" },
@@ -83,6 +88,7 @@ export const STARTER_PACKS: StarterPack[] = [
     slug: "essential-nouns",
     title: "Essential Nouns",
     description: "Everyday nouns for people, places and things",
+    level: "A1",
     cards: [
       { term: "time", definition: "время" },
       { term: "year", definition: "год" },
@@ -120,6 +126,7 @@ export const STARTER_PACKS: StarterPack[] = [
     slug: "common-adjectives",
     title: "Common Adjectives",
     description: "Adjectives to describe almost anything",
+    level: "A1",
     cards: [
       { term: "good", definition: "хороший" },
       { term: "bad", definition: "плохой" },
@@ -152,6 +159,7 @@ export const STARTER_PACKS: StarterPack[] = [
     slug: "everyday-phrases",
     title: "Everyday Phrases",
     description: "Short phrases for daily conversation",
+    level: "A2",
     cards: [
       { term: "How are you?", definition: "Как дела?" },
       { term: "Nice to meet you", definition: "Приятно познакомиться" },
@@ -173,6 +181,90 @@ export const STARTER_PACKS: StarterPack[] = [
       { term: "Of course", definition: "Конечно" },
       { term: "No problem", definition: "Без проблем" },
       { term: "Take care", definition: "Береги себя" },
+    ],
+  },
+  {
+    slug: "travel-city",
+    title: "Travel & City",
+    description: "Getting around: transport, directions, sightseeing",
+    level: "A2",
+    cards: [
+      { term: "airport", definition: "аэропорт" },
+      { term: "train station", definition: "вокзал" },
+      { term: "ticket", definition: "билет" },
+      { term: "return ticket", definition: "обратный билет" },
+      { term: "luggage", definition: "багаж" },
+      { term: "passport", definition: "паспорт" },
+      { term: "customs", definition: "таможня" },
+      { term: "departure", definition: "отправление, вылет" },
+      { term: "arrival", definition: "прибытие" },
+      { term: "timetable", definition: "расписание" },
+      { term: "map", definition: "карта" },
+      { term: "street", definition: "улица" },
+      { term: "square", definition: "площадь" },
+      { term: "bridge", definition: "мост" },
+      { term: "crossroads", definition: "перекрёсток" },
+      { term: "museum", definition: "музей" },
+      { term: "hotel", definition: "гостиница" },
+      { term: "booking", definition: "бронирование" },
+      { term: "sightseeing", definition: "осмотр достопримечательностей" },
+      { term: "guided tour", definition: "экскурсия с гидом" },
+    ],
+  },
+  {
+    slug: "phrasal-verbs",
+    title: "Phrasal Verbs",
+    description: "The phrasal verbs you can't avoid in real English",
+    level: "B1",
+    cards: [
+      { term: "give up", definition: "сдаваться, бросать" },
+      { term: "look for", definition: "искать" },
+      { term: "look after", definition: "присматривать за" },
+      { term: "find out", definition: "выяснять, узнавать" },
+      { term: "carry on", definition: "продолжать" },
+      { term: "put off", definition: "откладывать" },
+      { term: "turn on", definition: "включать" },
+      { term: "turn off", definition: "выключать" },
+      { term: "pick up", definition: "подбирать; забирать" },
+      { term: "get along", definition: "ладить" },
+      { term: "run out of", definition: "заканчиваться (о запасах)" },
+      { term: "come across", definition: "случайно натыкаться на" },
+      { term: "set up", definition: "основывать; настраивать" },
+      { term: "take off", definition: "взлетать; снимать (одежду)" },
+      { term: "break down", definition: "ломаться" },
+      { term: "bring up", definition: "воспитывать; поднимать (тему)" },
+      { term: "call off", definition: "отменять" },
+      { term: "figure out", definition: "разобраться, понять" },
+      { term: "show up", definition: "появляться, приходить" },
+      { term: "work out", definition: "тренироваться; получаться" },
+    ],
+  },
+  {
+    slug: "work-career",
+    title: "Work & Career",
+    description: "Vocabulary for the office, interviews and career talk",
+    level: "B1",
+    cards: [
+      { term: "salary", definition: "зарплата" },
+      { term: "job interview", definition: "собеседование" },
+      { term: "CV / resume", definition: "резюме" },
+      { term: "employer", definition: "работодатель" },
+      { term: "employee", definition: "сотрудник" },
+      { term: "colleague", definition: "коллега" },
+      { term: "promotion", definition: "повышение" },
+      { term: "deadline", definition: "крайний срок" },
+      { term: "meeting", definition: "совещание" },
+      { term: "skill", definition: "навык" },
+      { term: "experience", definition: "опыт" },
+      { term: "department", definition: "отдел" },
+      { term: "schedule", definition: "график, расписание" },
+      { term: "task", definition: "задача" },
+      { term: "responsibility", definition: "ответственность" },
+      { term: "to hire", definition: "нанимать" },
+      { term: "to fire", definition: "увольнять" },
+      { term: "to negotiate", definition: "вести переговоры" },
+      { term: "business trip", definition: "командировка" },
+      { term: "day off", definition: "выходной" },
     ],
   },
 ];
