@@ -15,6 +15,7 @@ interface Stats {
   streak: number;
   reviewsToday: number;
   dueTotal: number;
+  days: { day: string; reviews: number }[];
 }
 
 interface StarterPack {
@@ -24,6 +25,7 @@ interface StarterPack {
   level: "A1" | "A2" | "B1";
   cardCount: number;
   added: boolean;
+  recommended: boolean;
 }
 
 const LEVELS = [
@@ -34,16 +36,27 @@ const LEVELS = [
 
 const { data: sets, refresh } = await useFetch<QuizSet[]>("/api/sets");
 const { data: stats } = await useFetch<Stats>("/api/stats");
-const { data: packs, refresh: refreshPacks } = await useFetch<StarterPack[]>("/api/starter-packs");
+const { data: packData, refresh: refreshPacks } = await useFetch<{
+  level: StarterPack["level"] | null;
+  packs: StarterPack[];
+}>("/api/starter-packs");
 
-const suggestedPacks = computed(() => (packs.value ?? []).filter((pack) => !pack.added));
+const suggestedPacks = computed(() => (packData.value?.packs ?? []).filter((pack) => !pack.added));
+const userLevel = computed(() => packData.value?.level ?? null);
 
+// The user's own level (picked at registration) goes first, marked as
+// recommended; the sort is stable so the rest keep the A1→B1 order.
 const packsByLevel = computed(() =>
   LEVELS.map((level) => ({
     ...level,
+    recommended: level.code === userLevel.value,
     packs: suggestedPacks.value.filter((pack) => pack.level === level.code),
-  })).filter((group) => group.packs.length),
+  }))
+    .filter((group) => group.packs.length)
+    .sort((a, b) => Number(b.recommended) - Number(a.recommended)),
 );
+
+const hasChart = computed(() => (stats.value?.days ?? []).some((d) => d.reviews > 0));
 const addingPack = ref<string | null>(null);
 
 async function addPack(slug: string) {
@@ -87,13 +100,21 @@ async function removeSet(id: number) {
     <h1 class="mb-4 text-2xl font-bold">My sets</h1>
 
     <div
-      v-if="stats && (stats.streak || stats.reviewsToday || stats.dueTotal)"
-      class="mb-4 flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+      v-if="stats && (stats.streak || stats.reviewsToday || stats.dueTotal || hasChart)"
+      class="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
     >
-      <span v-if="stats.streak" class="font-semibold">🔥 {{ stats.streak }}-day streak</span>
-      <span>{{ stats.reviewsToday }} reviews today</span>
-      <span v-if="stats.dueTotal" class="text-blue-700 dark:text-blue-400">{{ stats.dueTotal }} cards due</span>
-      <span v-else class="text-green-600 dark:text-green-400">all caught up ✓</span>
+      <div class="flex flex-wrap gap-x-5 gap-y-2">
+        <span v-if="stats.streak" class="font-semibold">🔥 {{ stats.streak }}-day streak</span>
+        <span>{{ stats.reviewsToday }} reviews today</span>
+        <span v-if="stats.dueTotal" class="text-blue-700 dark:text-blue-400">{{ stats.dueTotal }} cards due</span>
+        <span v-else class="text-green-600 dark:text-green-400">all caught up ✓</span>
+      </div>
+      <div v-if="hasChart" class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
+        <h2 class="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+          Reviews · last 14 days
+        </h2>
+        <StatsChart :days="stats.days" />
+      </div>
     </div>
 
     <form class="mb-6 flex gap-2" @submit.prevent="createSet">
@@ -139,7 +160,11 @@ async function removeSet(id: number) {
     <div v-if="suggestedPacks.length" class="mt-8">
       <h2 class="mb-1 text-lg font-bold">Starter packs</h2>
       <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-        Curated English vocabulary to get you going — add a pack and start studying right away.
+        {{
+          userLevel
+            ? `Curated English vocabulary — packs for your level (${userLevel}) come first.`
+            : "Curated English vocabulary to get you going — add a pack and start studying right away."
+        }}
       </p>
       <div v-for="group in packsByLevel" :key="group.code" class="mb-4">
         <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -149,6 +174,12 @@ async function removeSet(id: number) {
             {{ group.code }}
           </span>
           {{ group.label }}
+          <span
+            v-if="group.recommended"
+            class="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white"
+          >
+            your level
+          </span>
         </h3>
         <ul class="flex flex-col gap-2">
           <li

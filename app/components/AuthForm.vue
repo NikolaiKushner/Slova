@@ -5,6 +5,7 @@ const props = defineProps<{
   endpoint: string;
   errorFallback: string;
   newPassword?: boolean;
+  extraBody?: Record<string, unknown>;
 }>();
 
 const { fetch: refreshSession } = useUserSession();
@@ -20,7 +21,7 @@ async function submit() {
   try {
     await $fetch(props.endpoint, {
       method: "POST",
-      body: { email: email.value, password: password.value },
+      body: { email: email.value, password: password.value, ...props.extraBody },
     });
     await refreshSession();
     await navigateTo("/dashboard");
@@ -46,6 +47,7 @@ async function submit() {
         :minlength="newPassword ? 8 : undefined"
         :autocomplete="newPassword ? 'new-password' : 'current-password'"
       />
+      <slot name="fields" />
       <button type="submit" class="btn btn-primary" :disabled="submitting">{{ submitLabel }}</button>
     </form>
     <p v-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
