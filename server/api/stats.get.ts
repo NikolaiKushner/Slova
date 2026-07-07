@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
   const day = sql<string>`date(${reviewLog.reviewedAt})`;
   const dayRows = await db
-    .select({ day })
+    .select({ day, count: sql<number>`count(*)` })
     .from(reviewLog)
     .where(eq(reviewLog.userId, user.id))
     .groupBy(day)
@@ -46,9 +46,20 @@ export default defineEventHandler(async (event) => {
     )
     .where(eq(sets.userId, user.id));
 
+  // Daily review counts for the trailing two weeks, zero-filled so the
+  // chart always shows a continuous timeline.
+  const CHART_DAYS = 14;
+  const countByDay = new Map(dayRows.map((row) => [row.day, row.count]));
+  const todayStart = new Date(`${today}T00:00:00Z`).getTime();
+  const days = Array.from({ length: CHART_DAYS }, (_, i) => {
+    const dayIso = new Date(todayStart - (CHART_DAYS - 1 - i) * 86400000).toISOString().slice(0, 10);
+    return { day: dayIso, reviews: countByDay.get(dayIso) ?? 0 };
+  });
+
   return {
     streak,
     reviewsToday: reviewsRow?.count ?? 0,
     dueTotal: dueRow?.count ?? 0,
+    days,
   };
 });
