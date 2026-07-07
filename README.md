@@ -97,8 +97,9 @@ docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
 
 ## What's included
 
-- Public landing page with a hands-on demo card; the app itself lives behind
-  login at `/dashboard`
+- Public marketing landing page — sticky anchor nav, interactive flip-card
+  demo, product screenshots, testimonials, FAQ — while the app itself lives
+  behind login at `/dashboard`
 - Email/password auth (register, login, logout) with hashed passwords,
   session cookies, and rate-limited login/register endpoints
 - Flashcard sets: create, list, delete, per-user
