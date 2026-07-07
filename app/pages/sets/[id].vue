@@ -101,7 +101,7 @@ function openStudy() {
 
 <template>
   <div v-if="set">
-    <NuxtLink to="/" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
+    <NuxtLink to="/dashboard" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
     <h1 class="mt-1 text-2xl font-bold">{{ set.title }}</h1>
     <p v-if="set.description" class="text-gray-500 dark:text-gray-400">{{ set.description }}</p>
 
@@ -169,7 +169,7 @@ function openStudy() {
           <SpeakButton :text="card.term" />
           <span class="font-semibold">{{ card.term }}</span>
           <span class="mx-4 flex-1 text-gray-600 dark:text-gray-300">{{ card.definition }}</span>
-          <button type="button" class="btn px-2 py-1 text-xs" @click="removeCard(card.id)">Delete</button>
+          <ConfirmButton confirm-label="Delete card?" @confirm="removeCard(card.id)" />
         </li>
         <li v-if="!set.cards.length" class="py-2 text-center text-gray-400 dark:text-gray-500">
           No cards yet — add one above.
@@ -309,6 +309,6 @@ function openStudy() {
   </div>
   <div v-else class="mt-12 text-center text-gray-500 dark:text-gray-400">
     <p>{{ error?.statusCode === 404 ? "Set not found." : "Failed to load this set." }}</p>
-    <NuxtLink to="/" class="text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
+    <NuxtLink to="/dashboard" class="text-blue-600 hover:underline dark:text-blue-400">&larr; My sets</NuxtLink>
   </div>
 </template>

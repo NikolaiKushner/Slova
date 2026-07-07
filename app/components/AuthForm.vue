@@ -24,7 +24,7 @@ async function submit() {
       body: { email: email.value, password: password.value, ...props.extraBody },
     });
     await refreshSession();
-    await navigateTo("/");
+    await navigateTo("/dashboard");
   } catch (e) {
     error.value = (e as { data?: { statusMessage?: string } })?.data?.statusMessage || props.errorFallback;
   } finally {

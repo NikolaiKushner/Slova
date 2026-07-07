@@ -6,14 +6,19 @@ onMounted(sync);
 
 async function logout() {
   await clear();
-  await navigateTo("/login");
+  await navigateTo("/");
 }
 </script>
 
 <template>
   <div class="mx-auto max-w-2xl px-4 py-6">
     <header class="mb-8 flex items-center justify-between">
-      <NuxtLink to="/" class="text-xl font-bold text-gray-900 dark:text-gray-100">Slova</NuxtLink>
+      <NuxtLink
+        :to="loggedIn ? '/dashboard' : '/'"
+        class="text-xl font-bold text-gray-900 dark:text-gray-100"
+      >
+        Slova
+      </NuxtLink>
       <div class="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
         <span v-if="loggedIn">{{ user?.email }}</span>
         <button
@@ -25,6 +30,7 @@ async function logout() {
           {{ isDark ? "☀️" : "🌙" }}
         </button>
         <button v-if="loggedIn" type="button" class="btn" @click="logout">Log out</button>
+        <NuxtLink v-else to="/login" class="btn">Log in</NuxtLink>
       </div>
     </header>
     <main>
