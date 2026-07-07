@@ -37,7 +37,8 @@ consider splitting a dedicated backend back out.
 
 ```
 app/                 Vue app (pages, layouts, middleware, components)
-  pages/index.vue     Dashboard — sets with due counts, streak, reviews today
+  pages/index.vue     Public landing page (logged-in users go to /dashboard)
+  pages/dashboard.vue Dashboard — sets with due counts, streak, reviews today
   pages/sets/[id].vue Edit cards + study setup (mode, direction, queue)
   pages/login.vue, register.vue
   components/StudySession.vue   Runs a study session, posts reviews
@@ -56,6 +57,7 @@ server/
   utils/db.ts           Drizzle + better-sqlite3 client
   utils/srs.ts          Simplified SM-2 spaced-repetition scheduler
   utils/ownership.ts     Ownership check shared by set/card routes
+  utils/rateLimit.ts     In-memory rate limiter for the auth endpoints
   plugins/migrate.ts     Runs migrations automatically on server start
 ```
 
@@ -92,8 +94,10 @@ docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
 
 ## What's included
 
-- Email/password auth (register, login, logout) with hashed passwords and
-  session cookies
+- Public landing page with a hands-on demo card; the app itself lives behind
+  login at `/dashboard`
+- Email/password auth (register, login, logout) with hashed passwords,
+  session cookies, and rate-limited login/register endpoints
 - Flashcard sets: create, list, delete, per-user
 - Cards within a set: add, edit, delete
 - Spaced repetition: every answer (again/hard/good) reschedules the card via

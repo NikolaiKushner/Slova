@@ -1,179 +1,165 @@
 <script setup lang="ts">
-definePageMeta({ middleware: "auth" });
+// Public landing page. Logged-in users go straight to their dashboard.
+definePageMeta({
+  middleware: () => {
+    const { loggedIn } = useUserSession();
+    if (loggedIn.value) return navigateTo("/dashboard");
+  },
+});
 
-interface QuizSet {
-  id: number;
-  title: string;
-  description: string | null;
-  createdAt: string;
-  cardCount: number;
-  learnedCount: number;
-  dueCount: number;
+useHead({ title: "Slova — learn words that stick" });
+
+// A tiny hands-on demo of the flashcard mode, no account needed.
+const demoCards = [
+  { term: "resilient", definition: "устойчивый, стойкий" },
+  { term: "curiosity", definition: "любопытство" },
+  { term: "to accomplish", definition: "достигать, выполнять" },
+  { term: "seamless", definition: "бесшовный, плавный" },
+];
+const demoIndex = ref(0);
+const demoFlipped = ref(false);
+const demoCard = computed(() => demoCards[demoIndex.value]!);
+
+function nextDemoCard() {
+  demoFlipped.value = false;
+  demoIndex.value = (demoIndex.value + 1) % demoCards.length;
 }
 
-interface Stats {
-  streak: number;
-  reviewsToday: number;
-  dueTotal: number;
-}
-
-interface StarterPack {
-  slug: string;
-  title: string;
-  description: string;
-  level: "A1" | "A2" | "B1";
-  cardCount: number;
-  added: boolean;
-}
-
-const LEVELS = [
-  { code: "A1", label: "Beginner" },
-  { code: "A2", label: "Elementary" },
-  { code: "B1", label: "Intermediate" },
-] as const;
-
-const { data: sets, refresh } = await useFetch<QuizSet[]>("/api/sets");
-const { data: stats } = await useFetch<Stats>("/api/stats");
-const { data: packs, refresh: refreshPacks } = await useFetch<StarterPack[]>("/api/starter-packs");
-
-const suggestedPacks = computed(() => (packs.value ?? []).filter((pack) => !pack.added));
-
-const packsByLevel = computed(() =>
-  LEVELS.map((level) => ({
-    ...level,
-    packs: suggestedPacks.value.filter((pack) => pack.level === level.code),
-  })).filter((group) => group.packs.length),
-);
-const addingPack = ref<string | null>(null);
-
-async function addPack(slug: string) {
-  addingPack.value = slug;
-  try {
-    await $fetch(`/api/starter-packs/${slug}`, { method: "POST" });
-    await Promise.all([refresh(), refreshPacks()]);
-  } finally {
-    addingPack.value = null;
-  }
-}
-
-const title = ref("");
-const description = ref("");
-const creating = ref(false);
-
-async function createSet() {
-  if (!title.value.trim()) return;
-  creating.value = true;
-  try {
-    await $fetch("/api/sets", {
-      method: "POST",
-      body: { title: title.value, description: description.value },
-    });
-    title.value = "";
-    description.value = "";
-    await refresh();
-  } finally {
-    creating.value = false;
-  }
-}
-
-async function removeSet(id: number) {
-  await $fetch(`/api/sets/${id}`, { method: "DELETE" });
-  await refresh();
-}
+const features = [
+  {
+    icon: "🧠",
+    title: "Spaced repetition",
+    text: "An SM-2 scheduler (the Anki family) decides when each word comes back — right before you'd forget it.",
+  },
+  {
+    icon: "🃏",
+    title: "Four study modes",
+    text: "Flip cards, multiple choice, typing with typo tolerance, and match-the-pairs — all feed the same scheduler.",
+  },
+  {
+    icon: "📦",
+    title: "Starter packs",
+    text: "Curated English vocabulary grouped by CEFR level (A1–B1), ready to study in one click.",
+  },
+  {
+    icon: "📥",
+    title: "Import & export",
+    text: "Bring words in from CSV or plain text, take them out the same way. Your data stays yours.",
+  },
+  {
+    icon: "🔊",
+    title: "Pronunciation",
+    text: "Hear any word spoken aloud with the browser's built-in speech — no plugins, no accounts.",
+  },
+  {
+    icon: "🔥",
+    title: "Streaks & progress",
+    text: "A study-day streak, due-card counts, and per-set progress bars keep you coming back.",
+  },
+];
 </script>
 
 <template>
   <div>
-    <h1 class="mb-4 text-2xl font-bold">My sets</h1>
-
-    <div
-      v-if="stats && (stats.streak || stats.reviewsToday || stats.dueTotal)"
-      class="mb-4 flex flex-wrap gap-x-5 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
-    >
-      <span v-if="stats.streak" class="font-semibold">🔥 {{ stats.streak }}-day streak</span>
-      <span>{{ stats.reviewsToday }} reviews today</span>
-      <span v-if="stats.dueTotal" class="text-blue-700 dark:text-blue-400">{{ stats.dueTotal }} cards due</span>
-      <span v-else class="text-green-600 dark:text-green-400">all caught up ✓</span>
-    </div>
-
-    <form class="mb-6 flex gap-2" @submit.prevent="createSet">
-      <input v-model="title" class="input flex-1" placeholder="Set title" required />
-      <input v-model="description" class="input flex-1" placeholder="Description (optional)" />
-      <button type="submit" class="btn btn-primary" :disabled="creating">Create</button>
-    </form>
-
-    <ul class="flex flex-col gap-2">
-      <li
-        v-for="set in sets"
-        :key="set.id"
-        class="flex items-center justify-between gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-gray-800"
-      >
-        <NuxtLink :to="`/sets/${set.id}`" class="text-blue-600 hover:underline dark:text-blue-400">
-          {{ set.title }}
-        </NuxtLink>
-        <span v-if="set.description" class="flex-1 text-sm text-gray-500 dark:text-gray-400">
-          {{ set.description }}
-        </span>
-        <span v-if="set.cardCount" class="text-xs whitespace-nowrap text-gray-400 dark:text-gray-500">
-          {{ set.learnedCount }}/{{ set.cardCount }} learned
-        </span>
-        <span
-          v-if="set.dueCount"
-          class="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs whitespace-nowrap text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300"
-        >
-          {{ set.dueCount }} due
-        </span>
-        <span
-          v-else-if="set.cardCount"
-          class="text-xs whitespace-nowrap text-green-600 dark:text-green-400"
-        >
-          ✓ done for now
-        </span>
-        <button type="button" class="btn px-2 py-1 text-xs" @click="removeSet(set.id)">Delete</button>
-      </li>
-      <li v-if="!sets?.length" class="py-2 text-center text-gray-400 dark:text-gray-500">
-        No sets yet — create one above, or grab a starter pack below.
-      </li>
-    </ul>
-
-    <div v-if="suggestedPacks.length" class="mt-8">
-      <h2 class="mb-1 text-lg font-bold">Starter packs</h2>
-      <p class="mb-3 text-sm text-gray-500 dark:text-gray-400">
-        Curated English vocabulary to get you going — add a pack and start studying right away.
+    <!-- Hero -->
+    <section class="py-10 text-center sm:py-14">
+      <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl">
+        Learn words that
+        <span class="text-blue-600 dark:text-blue-400">stick</span>
+      </h1>
+      <p class="mx-auto mt-4 max-w-md text-lg text-gray-600 dark:text-gray-300">
+        Slova is a flashcard app built on spaced repetition: study a few minutes a day,
+        and it schedules every word right before you'd forget it.
       </p>
-      <div v-for="group in packsByLevel" :key="group.code" class="mb-4">
-        <h3 class="mb-2 flex items-center gap-2 text-sm font-semibold">
-          <span
-            class="rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-bold text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300"
-          >
-            {{ group.code }}
-          </span>
-          {{ group.label }}
-        </h3>
-        <ul class="flex flex-col gap-2">
-          <li
-            v-for="pack in group.packs"
-            :key="pack.slug"
-            class="flex items-center justify-between gap-3 rounded-md border border-dashed border-gray-300 px-3 py-2 dark:border-gray-700"
-          >
-            <div class="min-w-0">
-              <span class="font-medium">{{ pack.title }}</span>
-              <span class="ml-2 text-xs whitespace-nowrap text-gray-400 dark:text-gray-500">
-                {{ pack.cardCount }} words
-              </span>
-              <p class="truncate text-sm text-gray-500 dark:text-gray-400">{{ pack.description }}</p>
-            </div>
-            <button
-              type="button"
-              class="btn shrink-0"
-              :disabled="addingPack === pack.slug"
-              @click="addPack(pack.slug)"
-            >
-              + Add
-            </button>
-          </li>
-        </ul>
+      <div class="mt-7 flex justify-center gap-3">
+        <NuxtLink to="/register" class="btn btn-primary px-5 py-2.5 text-base">
+          Get started — it's free
+        </NuxtLink>
+        <NuxtLink to="/login" class="btn px-5 py-2.5 text-base">Log in</NuxtLink>
       </div>
-    </div>
+    </section>
+
+    <!-- Live demo card -->
+    <section class="mx-auto max-w-md">
+      <p class="mb-2 text-center text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        Try it — no account needed
+      </p>
+      <div
+        class="cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-14 text-center text-2xl shadow-sm select-none dark:border-gray-800 dark:bg-gray-900"
+        @click="demoFlipped = !demoFlipped"
+      >
+        <p>{{ demoFlipped ? demoCard.definition : demoCard.term }}</p>
+        <span class="mt-4 block text-xs text-gray-400 dark:text-gray-500">
+          {{ demoFlipped ? "Got it? On to the next one" : "Click to flip" }}
+        </span>
+      </div>
+      <div class="mt-3 flex justify-center">
+        <button type="button" class="btn" @click="nextDemoCard">Next word →</button>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="mt-14">
+      <h2 class="mb-6 text-center text-2xl font-bold">Everything you need to actually remember</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div
+          v-for="feature in features"
+          :key="feature.title"
+          class="rounded-lg border border-gray-200 px-4 py-3.5 dark:border-gray-800"
+        >
+          <h3 class="font-semibold">{{ feature.icon }} {{ feature.title }}</h3>
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">{{ feature.text }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="mt-14">
+      <h2 class="mb-6 text-center text-2xl font-bold">How it works</h2>
+      <ol class="mx-auto flex max-w-md flex-col gap-4">
+        <li class="flex gap-3">
+          <span
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white"
+          >
+            1
+          </span>
+          <p class="text-gray-600 dark:text-gray-300">
+            <strong class="text-gray-900 dark:text-gray-100">Add words.</strong>
+            Create a set, import from CSV, or grab a curated starter pack for your level.
+          </p>
+        </li>
+        <li class="flex gap-3">
+          <span
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white"
+          >
+            2
+          </span>
+          <p class="text-gray-600 dark:text-gray-300">
+            <strong class="text-gray-900 dark:text-gray-100">Study a few minutes a day.</strong>
+            Pick a mode — flashcards, choice, typing, or match — and rate how well you knew each word.
+          </p>
+        </li>
+        <li class="flex gap-3">
+          <span
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white"
+          >
+            3
+          </span>
+          <p class="text-gray-600 dark:text-gray-300">
+            <strong class="text-gray-900 dark:text-gray-100">Let the scheduler do the rest.</strong>
+            Words you know drift weeks out; words you miss come right back. Show up, clear your due cards, keep the streak.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="mt-14 mb-6 rounded-xl border border-blue-200 bg-blue-50 px-6 py-8 text-center dark:border-blue-900 dark:bg-blue-950">
+      <h2 class="text-xl font-bold">Start remembering more today</h2>
+      <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+        Free, open source, and your first pack is one click away.
+      </p>
+      <NuxtLink to="/register" class="btn btn-primary mt-4 px-5 py-2.5 text-base">Create account</NuxtLink>
+    </section>
   </div>
 </template>
