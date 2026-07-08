@@ -147,7 +147,12 @@ instances. Optional: set `SMTP_*` secrets to enable password-reset emails.
   in either direction (term → definition or definition → term)
 - Progress & motivation: per-set learned/learning/new progress bar, "tricky
   words" list, due-count badges, reviews-today counter, a study-day streak,
-  and a reviews-per-day chart for the last two weeks
+  a reviews-per-day chart, a GitHub-style activity heatmap for the last six
+  months, and a 14-day forecast of upcoming reviews
+- AI card generation (optional — set `ANTHROPIC_API_KEY`): generate a set
+  from a topic or pasted text with a reviewable preview, and one-click term
+  translation when adding cards. Uses the Claude API; the UI stays hidden
+  when no key is configured
 - Onboarding: an optional CEFR level picker (A1/A2/B1) at registration;
   starter packs for the chosen level are recommended first on the dashboard
 - Installable PWA: web app manifest, icons, and a minimal service worker

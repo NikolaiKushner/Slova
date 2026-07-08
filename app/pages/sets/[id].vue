@@ -24,6 +24,24 @@ const term = ref("");
 const definition = ref("");
 const addingCard = ref(false);
 
+// --- AI assistance (hidden unless the server has an API key configured) ---
+const { data: ai } = await useFetch<{ enabled: boolean }>("/api/ai/status");
+const translating = ref(false);
+
+async function translateTerm() {
+  if (!term.value.trim() || translating.value) return;
+  translating.value = true;
+  try {
+    const result = await $fetch<{ cards: { definition: string }[] }>("/api/ai/generate", {
+      method: "POST",
+      body: { mode: "translate", input: term.value },
+    });
+    if (result.cards[0]) definition.value = result.cards[0].definition;
+  } finally {
+    translating.value = false;
+  }
+}
+
 async function addCard() {
   if (!term.value.trim() || !definition.value.trim()) return;
   addingCard.value = true;
@@ -214,9 +232,23 @@ function openStudy() {
 
       <form class="mb-6 flex gap-2" @submit.prevent="addCard">
         <input v-model="term" class="input flex-1" placeholder="Term" required />
-        <input v-model="definition" class="input flex-1" placeholder="Definition" required />
+        <div class="relative flex flex-1">
+          <input v-model="definition" class="input w-full" placeholder="Definition" required />
+          <button
+            v-if="ai?.enabled"
+            type="button"
+            class="absolute top-1/2 right-1.5 -translate-y-1/2 rounded px-1 text-sm hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-800"
+            :disabled="translating || !term.trim()"
+            title="Translate the term with AI"
+            @click="translateTerm"
+          >
+            {{ translating ? "…" : "✨" }}
+          </button>
+        </div>
         <button type="submit" class="btn btn-primary" :disabled="addingCard">Add card</button>
       </form>
+
+      <AiGenerateCards v-if="ai?.enabled" :set-id="setId" @added="refresh" />
 
       <ImportCards :set-id="setId" @imported="refresh" />
 
