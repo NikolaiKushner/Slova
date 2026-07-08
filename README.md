@@ -88,6 +88,17 @@ Inspect the database with Drizzle Studio:
 npm run db:studio
 ```
 
+## Tests
+
+```bash
+npm test          # unit tests (vitest): SRS scheduler, utilities
+npm run build     # e2e runs against the production build
+npm run test:e2e  # smoke tests (Playwright): register, study, undo, limits
+```
+
+CI (`.github/workflows/ci.yml`) runs the same three steps on every push to
+`main` and on pull requests.
+
 ## Docker
 
 ```bash

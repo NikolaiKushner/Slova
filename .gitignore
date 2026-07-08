@@ -26,3 +26,7 @@ logs
 # SQLite database
 data/*.db
 data/*.db-*
+
+# Test artifacts
+playwright-report
+test-results
