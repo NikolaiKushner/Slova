@@ -36,6 +36,13 @@
       "when": 1783506491000,
       "tag": "0004_furry_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783524330899,
+      "tag": "0005_tiny_shotgun",
+      "breakpoints": true
     }
   ]
 }

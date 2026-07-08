@@ -133,6 +133,8 @@ instances. Optional: set `SMTP_*` secrets to enable password-reset emails.
   `SMTP_*` env vars; in development the link is printed to the server
   console)
 - Flashcard sets: create, list, delete, per-user
+- Set sharing: a public read-only link per set (`/s/<slug>`), with one-click
+  "copy to my sets" for logged-in visitors
 - Cards within a set: add, edit, delete
 - Spaced repetition: every answer (again/hard/good) reschedules the card via
   a simplified SM-2 algorithm; the study queue shows only cards that are due

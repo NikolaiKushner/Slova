@@ -21,6 +21,10 @@ export const sets = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
+    // Sharing: a set with isPublic=1 is readable by anyone who knows its
+    // slug. The slug survives unsharing so a re-share keeps the same link.
+    isPublic: integer("is_public").notNull().default(0),
+    shareSlug: text("share_slug").unique(),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),
