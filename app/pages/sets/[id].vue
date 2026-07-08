@@ -8,6 +8,8 @@ interface QuizSet {
   title: string;
   description: string | null;
   now: string;
+  newCardsPerDay: number;
+  newCardsRemainingToday: number;
   cards: StudyCard[];
 }
 
@@ -72,11 +74,21 @@ const trickyCards = computed(() =>
 
 // The server sends its clock with the set so due checks don't depend on the
 // client's timezone; timestamps are UTC strings and compare lexicographically.
-const dueCards = computed(
+// New (never-reviewed) cards join the due queue only up to the set's
+// remaining daily allowance, so a freshly added pack doesn't flood the queue.
+const overdueCards = computed(
   () =>
-    set.value?.cards.filter(
-      (card) => !card.progress || card.progress.dueAt <= set.value!.now,
-    ) ?? [],
+    set.value?.cards.filter((card) => card.progress && card.progress.dueAt <= set.value!.now) ??
+    [],
+);
+const newCards = computed(() => set.value?.cards.filter((card) => !card.progress) ?? []);
+const dueCards = computed(() => [
+  ...overdueCards.value,
+  ...newCards.value.slice(0, set.value?.newCardsRemainingToday ?? Infinity),
+]);
+// New cards held back for later days by the daily cap.
+const heldBackNewCards = computed(() =>
+  Math.max(0, newCards.value.length - (set.value?.newCardsRemainingToday ?? Infinity)),
 );
 
 function startSession() {
@@ -287,6 +299,15 @@ function openStudy() {
             </li>
           </ul>
         </div>
+
+        <p
+          v-if="queueType === 'due' && heldBackNewCards > 0"
+          class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300"
+        >
+          {{ heldBackNewCards }} new {{ heldBackNewCards === 1 ? "card is" : "cards are" }} waiting
+          for the coming days — up to {{ set.newCardsPerDay }} new cards join the queue per day, so
+          reviews stay manageable. Pick "All cards" to study them anyway.
+        </p>
 
         <p
           v-if="queueType === 'due' && !dueCards.length"

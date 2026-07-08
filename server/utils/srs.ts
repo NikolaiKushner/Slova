@@ -17,6 +17,9 @@ export interface SrsState {
 }
 
 const MIN_EASE = 1.3;
+// At most this many never-reviewed cards enter a set's due queue per day, so
+// adding a large pack doesn't bury the user in an avalanche of "due" cards.
+export const NEW_CARDS_PER_DAY = 20;
 // A card graduates to "learned" once it survives to a three-week interval.
 const LEARNED_INTERVAL_DAYS = 21;
 // Failed cards come back within the same session.

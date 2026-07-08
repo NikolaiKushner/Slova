@@ -61,6 +61,9 @@ export const cardProgress = sqliteTable(
     correctStreak: integer("correct_streak").notNull().default(0),
     lapses: integer("lapses").notNull().default(0),
     lastReviewedAt: text("last_reviewed_at").notNull(),
+    // When the card was first reviewed — drives the daily new-card limit.
+    // Null only on rows that predate the column (backfilled in migration).
+    introducedAt: text("introduced_at"),
   },
   (table) => [
     uniqueIndex("card_progress_user_card_idx").on(table.userId, table.cardId),
@@ -80,10 +83,31 @@ export const reviewLog = sqliteTable(
       .notNull()
       .references(() => cards.id, { onDelete: "cascade" }),
     rating: text("rating").notNull(), // again | hard | good
-    mode: text("mode").notNull().default("flashcards"), // flashcards | choice | typing
+    mode: text("mode").notNull().default("flashcards"), // flashcards | choice | typing | match
+    // JSON snapshot of the card's progress before this review (null = the
+    // card was new). Lets an answer be undone server-side.
+    prevState: text("prev_state"),
     reviewedAt: text("reviewed_at")
       .notNull()
       .default(sql`(current_timestamp)`),
   },
   (table) => [index("review_log_user_reviewed_idx").on(table.userId, table.reviewedAt)],
+);
+
+// Single-use, hashed password-reset tokens; the raw token only ever lives in
+// the emailed link.
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [index("password_reset_tokens_user_idx").on(table.userId)],
 );

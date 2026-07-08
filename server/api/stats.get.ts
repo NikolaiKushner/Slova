@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { cardProgress, cards, reviewLog, sets } from "../database/schema";
+import { NEW_CARDS_PER_DAY } from "../utils/srs";
 
 export default defineEventHandler(async (event) => {
   const { user } = await requireUserSession(event);
@@ -34,9 +35,13 @@ export default defineEventHandler(async (event) => {
     .from(reviewLog)
     .where(and(eq(reviewLog.userId, user.id), sql`date(${reviewLog.reviewedAt}) = ${today}`));
 
-  const [dueRow] = await db
+  // Due total mirrors the per-set list: overdue reviews plus new cards,
+  // the latter capped by each set's remaining daily allowance.
+  const dueRows = await db
     .select({
-      count: sql<number>`count(case when ${cardProgress.id} is null or ${cardProgress.dueAt} <= ${now} then 1 end)`,
+      dueReviewCount: sql<number>`count(case when ${cardProgress.id} is not null and ${cardProgress.dueAt} <= ${now} then 1 end)`,
+      newCount: sql<number>`count(case when ${cardProgress.id} is null then 1 end)`,
+      introducedToday: sql<number>`count(case when date(${cardProgress.introducedAt}) = date('now') then 1 end)`,
     })
     .from(cards)
     .innerJoin(sets, eq(cards.setId, sets.id))
@@ -44,7 +49,16 @@ export default defineEventHandler(async (event) => {
       cardProgress,
       and(eq(cardProgress.cardId, cards.id), eq(cardProgress.userId, user.id)),
     )
-    .where(eq(sets.userId, user.id));
+    .where(eq(sets.userId, user.id))
+    .groupBy(sets.id);
+
+  const dueTotal = dueRows.reduce(
+    (total, row) =>
+      total +
+      row.dueReviewCount +
+      Math.min(row.newCount, Math.max(0, NEW_CARDS_PER_DAY - row.introducedToday)),
+    0,
+  );
 
   // Daily review counts for the trailing two weeks, zero-filled so the
   // chart always shows a continuous timeline.
@@ -59,7 +73,7 @@ export default defineEventHandler(async (event) => {
   return {
     streak,
     reviewsToday: reviewsRow?.count ?? 0,
-    dueTotal: dueRow?.count ?? 0,
+    dueTotal,
     days,
   };
 });

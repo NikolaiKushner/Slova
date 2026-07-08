@@ -102,10 +102,17 @@ docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
   behind login at `/dashboard`
 - Email/password auth (register, login, logout) with hashed passwords,
   session cookies, and rate-limited login/register endpoints
+- Password reset via emailed single-use links (SMTP when configured via
+  `SMTP_*` env vars; in development the link is printed to the server
+  console)
 - Flashcard sets: create, list, delete, per-user
 - Cards within a set: add, edit, delete
 - Spaced repetition: every answer (again/hard/good) reschedules the card via
   a simplified SM-2 algorithm; the study queue shows only cards that are due
+- Daily new-card limit: at most 20 never-reviewed cards per set join the due
+  queue each day, so adding a big pack doesn't flood the review queue
+- Undo: the last answer in a session can be taken back — the card's previous
+  scheduling state is restored server-side
 - Three study modes: flip cards with self-rating, multiple choice with
   distractors from the same set, and typed answers with typo tolerance —
   in either direction (term → definition or definition → term)
