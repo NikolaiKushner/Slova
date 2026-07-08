@@ -80,6 +80,42 @@ test("studying a flashcard and undoing the answer", async ({ page }) => {
   expect(stats.reviewsToday).toBe(0);
 });
 
+test("sharing a set: public page works, copying needs auth", async ({ page, browser }) => {
+  await open(page, "/login");
+  await page.fill('input[type="email"]', EMAIL);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL("**/dashboard");
+
+  const sets = await page.request.get("/api/sets").then((r) => r.json());
+  const share = await page.request
+    .post(`/api/sets/${sets[0].id}/share`, { data: { enabled: true } })
+    .then((r) => r.json());
+  expect(share.isPublic).toBe(1);
+  expect(share.shareSlug).toBeTruthy();
+
+  // Anyone with the link sees the cards without an account.
+  const anonContext = await browser.newContext();
+  const anon = await anonContext.newPage();
+  await anon.goto(`/s/${share.shareSlug}`, { waitUntil: "networkidle" });
+  await expect(anon.getByText("Shared set")).toBeVisible();
+  await expect(anon.getByRole("heading", { name: sets[0].title })).toBeVisible();
+
+  // ...but copying requires logging in.
+  const copyAnon = await anon.request.post(`/api/public/sets/${share.shareSlug}/copy`, {
+    failOnStatusCode: false,
+  });
+  expect(copyAnon.status()).toBe(401);
+  await anonContext.close();
+
+  // The owner can unshare; the public page then 404s.
+  await page.request.post(`/api/sets/${sets[0].id}/share`, { data: { enabled: false } });
+  const gone = await page.request.get(`/api/public/sets/${share.shareSlug}`, {
+    failOnStatusCode: false,
+  });
+  expect(gone.status()).toBe(404);
+});
+
 test("password-reset endpoints behave", async ({ request }) => {
   // Identical response for known and unknown emails (no enumeration).
   const known = await request.post("/api/auth/forgot", { data: { email: EMAIL } });

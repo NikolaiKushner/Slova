@@ -30,5 +30,10 @@
     "@types/nodemailer": "^8.0.1",
     "drizzle-kit": "^0.31.10",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
+    }
   }
 }

@@ -10,6 +10,8 @@ interface QuizSet {
   now: string;
   newCardsPerDay: number;
   newCardsRemainingToday: number;
+  isPublic: number;
+  shareSlug: string | null;
   cards: StudyCard[];
 }
 
@@ -44,6 +46,35 @@ async function removeCard(id: number) {
 }
 
 const mode = ref<"edit" | "study">("edit");
+
+// --- Sharing ---
+const requestOrigin = useRequestURL().origin;
+const togglingShare = ref(false);
+const linkCopied = ref(false);
+const shareUrl = computed(() =>
+  set.value?.isPublic && set.value.shareSlug ? `${requestOrigin}/s/${set.value.shareSlug}` : null,
+);
+
+async function toggleShare() {
+  if (!set.value || togglingShare.value) return;
+  togglingShare.value = true;
+  try {
+    await $fetch(`/api/sets/${setId}/share`, {
+      method: "POST",
+      body: { enabled: !set.value.isPublic },
+    });
+    await refresh();
+  } finally {
+    togglingShare.value = false;
+  }
+}
+
+async function copyShareLink() {
+  if (!shareUrl.value) return;
+  await navigator.clipboard.writeText(shareUrl.value);
+  linkCopied.value = true;
+  setTimeout(() => (linkCopied.value = false), 2000);
+}
 
 // --- Study setup ---
 const studyMode = ref<StudyMode>("flashcards");
@@ -164,6 +195,23 @@ function openStudy() {
     </div>
 
     <template v-if="mode === 'edit'">
+      <div class="mb-4 flex flex-wrap items-center gap-2">
+        <button type="button" class="btn" :disabled="togglingShare" @click="toggleShare">
+          {{ set.isPublic ? "🔒 Stop sharing" : "🔗 Share set" }}
+        </button>
+        <template v-if="shareUrl">
+          <input
+            class="input min-w-0 flex-1"
+            readonly
+            :value="shareUrl"
+            @focus="($event.target as HTMLInputElement).select()"
+          />
+          <button type="button" class="btn" @click="copyShareLink">
+            {{ linkCopied ? "Copied ✓" : "Copy link" }}
+          </button>
+        </template>
+      </div>
+
       <form class="mb-6 flex gap-2" @submit.prevent="addCard">
         <input v-model="term" class="input flex-1" placeholder="Term" required />
         <input v-model="definition" class="input flex-1" placeholder="Definition" required />
