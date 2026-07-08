@@ -8,8 +8,9 @@ export function aiEnabled() {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
-// Override with e.g. ANTHROPIC_MODEL=claude-haiku-4-5 to trade quality for cost.
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
+// The workload is mostly single-word translation, so default to the cheapest
+// model. Override with e.g. ANTHROPIC_MODEL=claude-opus-4-8 for top quality.
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5";
 
 let client: Anthropic | null = null;
 function getClient() {
@@ -44,6 +45,11 @@ const CARDS_SCHEMA = {
 
 const SYSTEM = `You generate flashcards for a vocabulary-learning app. Each card is a term and its definition (usually a translation). The app's default language pair is English–Russian: terms in English, definitions in Russian. If the user's input is clearly in another language or asks for another pair, follow the input instead. Keep terms in their dictionary form (verbs with "to ...", nouns in singular) and definitions short — a translation plus at most a couple of words of clarification. Never include numbering, quotes, or extra commentary in the fields.`;
 
+// Translations repeat a lot (common words, retyped terms) — cache them so a
+// repeated term costs nothing. Process-local, capped, resets on restart.
+const translationCache = new Map<string, GeneratedCard[]>();
+const TRANSLATION_CACHE_MAX = 1000;
+
 export async function generateCards(options: {
   mode: "topic" | "text" | "translate";
   input: string;
@@ -51,6 +57,12 @@ export async function generateCards(options: {
   existingTerms?: string[];
 }): Promise<GeneratedCard[]> {
   const { mode, input, count, existingTerms } = options;
+
+  const cacheKey = mode === "translate" ? input.trim().toLowerCase() : null;
+  if (cacheKey) {
+    const cached = translationCache.get(cacheKey);
+    if (cached) return cached;
+  }
 
   const avoid = existingTerms?.length
     ? `\n\nThe set already contains these terms — do not repeat them:\n${existingTerms.join(", ")}`
@@ -77,8 +89,16 @@ export async function generateCards(options: {
 
   const text = response.content.find((block) => block.type === "text")?.text ?? "";
   const parsed = JSON.parse(text) as { cards: GeneratedCard[] };
-  return parsed.cards
+  const result = parsed.cards
     .map((card) => ({ term: card.term.trim(), definition: card.definition.trim() }))
     .filter((card) => card.term && card.definition)
     .slice(0, Math.max(count, 1));
+
+  if (cacheKey && result.length) {
+    if (translationCache.size >= TRANSLATION_CACHE_MAX) {
+      translationCache.delete(translationCache.keys().next().value!);
+    }
+    translationCache.set(cacheKey, result);
+  }
+  return result;
 }

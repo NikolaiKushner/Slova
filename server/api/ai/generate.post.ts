@@ -16,9 +16,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: "AI generation isn't configured on this server",
     });
   }
-  // Each call costs real money — keep a per-IP lid on it.
-  enforceRateLimit(event, "ai-generate", { limit: 30, windowSeconds: 60 * 60 });
-
   const body = await readBody<{
     mode?: string;
     input?: string;
@@ -36,6 +33,18 @@ export default defineEventHandler(async (event) => {
   }
   if (input.length > MAX_INPUT_CHARS) {
     throw createError({ statusCode: 400, statusMessage: `input is too long (max ${MAX_INPUT_CHARS} characters)` });
+  }
+
+  // Each call costs real money — keep a per-IP lid on it. Translations are
+  // tiny (and served from cache when repeated), so they get a looser bucket
+  // than full set generation.
+  if (mode === "translate") {
+    if (input.length > 100) {
+      throw createError({ statusCode: 400, statusMessage: "A term should be under 100 characters" });
+    }
+    enforceRateLimit(event, "ai-translate", { limit: 120, windowSeconds: 60 * 60 });
+  } else {
+    enforceRateLimit(event, "ai-generate", { limit: 20, windowSeconds: 60 * 60 });
   }
   const count = Math.min(Math.max(Number(body?.count) || 12, 1), MAX_COUNT);
 

@@ -28,19 +28,48 @@ const addingCard = ref(false);
 const { data: ai } = await useFetch<{ enabled: boolean }>("/api/ai/status");
 const translating = ref(false);
 
-async function translateTerm() {
-  if (!term.value.trim() || translating.value) return;
+async function translateTerm(options: { overwrite: boolean }) {
+  const input = term.value.trim();
+  if (!input || translating.value) return;
   translating.value = true;
   try {
     const result = await $fetch<{ cards: { definition: string }[] }>("/api/ai/generate", {
       method: "POST",
-      body: { mode: "translate", input: term.value },
+      body: { mode: "translate", input },
     });
-    if (result.cards[0]) definition.value = result.cards[0].definition;
+    // Don't clobber anything the user typed while the request was in flight.
+    if (result.cards[0] && (options.overwrite || !definition.value.trim())) {
+      definition.value = result.cards[0].definition;
+    }
+  } catch (e) {
+    // Auto-translate stays silent on failure; the manual button rethrows.
+    if (options.overwrite) throw e;
   } finally {
     translating.value = false;
   }
 }
+
+// Auto-translate once typing pauses — but only when it won't waste an API
+// call: the definition is still empty, the input passes the "complete
+// English term" heuristic, and we haven't already asked for this exact term.
+let autoTranslateTimer: ReturnType<typeof setTimeout> | undefined;
+let lastAutoTerm = "";
+
+function autoTranslate() {
+  const input = term.value.trim();
+  if (!ai.value?.enabled || translating.value) return;
+  if (definition.value.trim()) return;
+  if (!looksLikeEnglishTerm(input)) return;
+  if (input.toLowerCase() === lastAutoTerm) return;
+  lastAutoTerm = input.toLowerCase();
+  translateTerm({ overwrite: false });
+}
+
+watch(term, () => {
+  clearTimeout(autoTranslateTimer);
+  autoTranslateTimer = setTimeout(autoTranslate, 900);
+});
+onUnmounted(() => clearTimeout(autoTranslateTimer));
 
 async function addCard() {
   if (!term.value.trim() || !definition.value.trim()) return;
@@ -231,7 +260,13 @@ function openStudy() {
       </div>
 
       <form class="mb-6 flex gap-2" @submit.prevent="addCard">
-        <input v-model="term" class="input flex-1" placeholder="Term" required />
+        <input
+          v-model="term"
+          class="input flex-1"
+          placeholder="Term"
+          required
+          @blur="autoTranslate"
+        />
         <div class="relative flex flex-1">
           <input v-model="definition" class="input w-full" placeholder="Definition" required />
           <button
@@ -240,7 +275,7 @@ function openStudy() {
             class="absolute top-1/2 right-1.5 -translate-y-1/2 rounded px-1 text-sm hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-gray-800"
             :disabled="translating || !term.trim()"
             title="Translate the term with AI"
-            @click="translateTerm"
+            @click="translateTerm({ overwrite: true })"
           >
             {{ translating ? "…" : "✨" }}
           </button>
