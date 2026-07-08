@@ -36,6 +36,39 @@ const saving = ref(false);
 const firstAnswers = new Map<number, Rating>();
 const summary = reactive({ good: 0, hard: 0, again: 0 });
 
+// One entry per answered card, so mis-clicks can be taken back. The server
+// restores the card's previous scheduling state; here we rewind the session.
+interface AnswerRecord {
+  cardId: number;
+  rating: Rating;
+  requeued: boolean;
+  wasFirstAnswer: boolean;
+}
+const history = ref<AnswerRecord[]>([]);
+const undoing = ref(false);
+// Bumped on undo so the question component remounts in a fresh state.
+const undoTick = ref(0);
+const canUndo = computed(() => history.value.length > 0 && props.mode !== "match" && !saving.value);
+
+async function undoLast() {
+  const last = history.value[history.value.length - 1];
+  if (!last || undoing.value) return;
+  undoing.value = true;
+  try {
+    await $fetch(`/api/cards/${last.cardId}/review/undo`, { method: "POST" });
+    history.value.pop();
+    if (last.requeued) queue.value.pop();
+    if (last.wasFirstAnswer) {
+      firstAnswers.delete(last.cardId);
+      summary[last.rating] -= 1;
+    }
+    index.value -= 1;
+    undoTick.value += 1;
+  } finally {
+    undoing.value = false;
+  }
+}
+
 const current = computed(() => queue.value[index.value]);
 const finished = computed(() => index.value >= queue.value.length);
 
@@ -72,9 +105,11 @@ async function submit(rating: Rating) {
   if (!card || saving.value) return;
   saving.value = true;
   try {
+    const wasFirstAnswer = !firstAnswers.has(card.id);
     await recordReview(card, rating);
     // Failed cards come back at the end of the session until answered.
     if (rating === "again") queue.value.push(card);
+    history.value.push({ cardId: card.id, rating, requeued: rating === "again", wasFirstAnswer });
   } finally {
     saving.value = false;
   }
@@ -113,11 +148,21 @@ function finishMatch() {
             :style="{ width: `${(index / queue.length) * 100}%` }"
           />
         </div>
+        <button
+          v-if="canUndo"
+          type="button"
+          class="btn px-2 py-1 text-xs"
+          :disabled="undoing"
+          title="Take back your last answer"
+          @click="undoLast"
+        >
+          ↶ Undo
+        </button>
       </div>
 
       <StudyFlashcard
         v-if="mode === 'flashcards'"
-        :key="`${current.id}-${index}`"
+        :key="`${current.id}-${index}-${undoTick}`"
         :front="front(current)"
         :back="back(current)"
         :saving="saving"
@@ -125,7 +170,7 @@ function finishMatch() {
       />
       <StudyChoice
         v-else-if="mode === 'choice'"
-        :key="`${current.id}-${index}`"
+        :key="`${current.id}-${index}-${undoTick}`"
         :front="front(current)"
         :answer="back(current)"
         :options="choiceOptions"
@@ -134,7 +179,7 @@ function finishMatch() {
       />
       <StudyTyping
         v-else
-        :key="`${current.id}-${index}`"
+        :key="`${current.id}-${index}-${undoTick}`"
         :front="front(current)"
         :answer="back(current)"
         @answered="submit"
@@ -152,7 +197,12 @@ function finishMatch() {
       <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
         Cards you missed will come back sooner; cards you knew will wait longer.
       </p>
-      <button type="button" class="btn btn-primary px-8" @click="emit('done')">Done</button>
+      <div class="flex justify-center gap-2">
+        <button v-if="canUndo" type="button" class="btn" :disabled="undoing" @click="undoLast">
+          ↶ Undo last answer
+        </button>
+        <button type="button" class="btn btn-primary px-8" @click="emit('done')">Done</button>
+      </div>
     </div>
   </div>
 </template>

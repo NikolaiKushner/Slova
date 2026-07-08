@@ -88,12 +88,39 @@ Inspect the database with Drizzle Studio:
 npm run db:studio
 ```
 
+## Tests
+
+```bash
+npm test          # unit tests (vitest): SRS scheduler, utilities
+npm run build     # e2e runs against the production build
+npm run test:e2e  # smoke tests (Playwright): register, study, undo, limits
+```
+
+CI (`.github/workflows/ci.yml`) runs the same three steps on every push to
+`main` and on pull requests.
+
 ## Docker
 
 ```bash
 docker build -t slova .
 docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
 ```
+
+## Deploy (Fly.io)
+
+The repo ships a `fly.toml`; deploying is four commands with the
+[Fly CLI](https://fly.io/docs/flyctl/):
+
+```bash
+fly launch --copy-config --no-deploy   # create the app from fly.toml
+fly volumes create data --size 1       # persistent disk for the SQLite file
+fly secrets set NUXT_SESSION_PASSWORD=$(openssl rand -hex 32)
+fly deploy
+```
+
+The app scales to zero when idle and wakes on the first request. Keep it at
+a single machine — SQLite lives on one volume and can't be shared across
+instances. Optional: set `SMTP_*` secrets to enable password-reset emails.
 
 ## What's included
 
@@ -102,10 +129,17 @@ docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
   behind login at `/dashboard`
 - Email/password auth (register, login, logout) with hashed passwords,
   session cookies, and rate-limited login/register endpoints
+- Password reset via emailed single-use links (SMTP when configured via
+  `SMTP_*` env vars; in development the link is printed to the server
+  console)
 - Flashcard sets: create, list, delete, per-user
 - Cards within a set: add, edit, delete
 - Spaced repetition: every answer (again/hard/good) reschedules the card via
   a simplified SM-2 algorithm; the study queue shows only cards that are due
+- Daily new-card limit: at most 20 never-reviewed cards per set join the due
+  queue each day, so adding a big pack doesn't flood the review queue
+- Undo: the last answer in a session can be taken back — the card's previous
+  scheduling state is restored server-side
 - Three study modes: flip cards with self-rating, multiple choice with
   distractors from the same set, and typed answers with typo tolerance —
   in either direction (term → definition or definition → term)

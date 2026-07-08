@@ -37,6 +37,19 @@ export default defineEventHandler(async (event) => {
   const next = applyRating(existing ?? NEW_CARD_STATE, rating as Rating);
   const now = sqlTimestamp();
 
+  // Snapshot the pre-review scheduling state so this answer can be undone.
+  const prevState = existing
+    ? JSON.stringify({
+        status: existing.status,
+        ease: existing.ease,
+        intervalDays: existing.intervalDays,
+        dueAt: existing.dueAt,
+        correctStreak: existing.correctStreak,
+        lapses: existing.lapses,
+        lastReviewedAt: existing.lastReviewedAt,
+      })
+    : null;
+
   let progress;
   if (existing) {
     [progress] = await db
@@ -47,11 +60,13 @@ export default defineEventHandler(async (event) => {
   } else {
     [progress] = await db
       .insert(cardProgress)
-      .values({ userId: user.id, cardId: card.id, ...next, lastReviewedAt: now })
+      .values({ userId: user.id, cardId: card.id, ...next, lastReviewedAt: now, introducedAt: now })
       .returning();
   }
 
-  await db.insert(reviewLog).values({ userId: user.id, cardId: card.id, rating, mode, reviewedAt: now });
+  await db
+    .insert(reviewLog)
+    .values({ userId: user.id, cardId: card.id, rating, mode, prevState, reviewedAt: now });
 
   return progress;
 });
