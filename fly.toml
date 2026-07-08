@@ -1,35 +1,27 @@
-# Fly.io config. First deploy:
+# fly.toml app configuration file generated for slova on 2026-07-08T14:29:51Z
 #
-#   fly launch --copy-config --no-deploy   # creates the app, keeps this file
-#   fly volumes create data --size 1       # persistent disk for SQLite
-#   fly secrets set NUXT_SESSION_PASSWORD=$(openssl rand -hex 32)
-#   fly deploy
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# SQLite lives on a single volume, so keep this app at exactly one machine —
-# don't scale it out horizontally.
 
-app = "slova"
-primary_region = "ams"
+app = 'slova'
+primary_region = 'ams'
 
 [build]
-  # Uses the repo Dockerfile; the default "runner" stage is the prod image.
 
 [env]
-  DATABASE_URL = "/app/data/app.db"
+  DATABASE_URL = '/app/data/app.db'
 
-[mounts]
-  source = "data"
-  destination = "/app/data"
+[[mounts]]
+  source = 'data'
+  destination = '/app/data'
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
-  # Scale to zero when idle — the first request after a pause takes a few
-  # seconds while the machine boots, which is fine for a demo deployment.
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+  size = 'shared-cpu-1x'
+  memory = '512mb'
