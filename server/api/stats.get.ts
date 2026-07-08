@@ -70,10 +70,36 @@ export default defineEventHandler(async (event) => {
     return { day: dayIso, reviews: countByDay.get(dayIso) ?? 0 };
   });
 
+  // Half a year of daily counts for the activity heatmap, zero-filled.
+  const HEATMAP_DAYS = 182;
+  const heatmap = Array.from({ length: HEATMAP_DAYS }, (_, i) => {
+    const dayIso = new Date(todayStart - (HEATMAP_DAYS - 1 - i) * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    return { day: dayIso, reviews: countByDay.get(dayIso) ?? 0 };
+  });
+
+  // Scheduled reviews for the next two weeks; anything already overdue is
+  // clamped into today's bucket. New (never-reviewed) cards aren't included —
+  // they trickle in via the daily new-card allowance instead.
+  const forecastDay = sql<string>`max(date(${cardProgress.dueAt}), ${today})`;
+  const forecastRows = await db
+    .select({ day: forecastDay, count: sql<number>`count(*)` })
+    .from(cardProgress)
+    .where(eq(cardProgress.userId, user.id))
+    .groupBy(forecastDay);
+  const forecastMap = new Map(forecastRows.map((row) => [row.day, row.count]));
+  const forecast = Array.from({ length: CHART_DAYS }, (_, i) => {
+    const dayIso = new Date(todayStart + i * 86400000).toISOString().slice(0, 10);
+    return { day: dayIso, reviews: forecastMap.get(dayIso) ?? 0 };
+  });
+
   return {
     streak,
     reviewsToday: reviewsRow?.count ?? 0,
     dueTotal,
     days,
+    heatmap,
+    forecast,
   };
 });
