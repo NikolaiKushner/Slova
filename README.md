@@ -106,6 +106,22 @@ docker build -t slova .
 docker run -p 3000:3000 --env-file .env -v $(pwd)/data:/app/data slova
 ```
 
+## Deploy (Fly.io)
+
+The repo ships a `fly.toml`; deploying is four commands with the
+[Fly CLI](https://fly.io/docs/flyctl/):
+
+```bash
+fly launch --copy-config --no-deploy   # create the app from fly.toml
+fly volumes create data --size 1       # persistent disk for the SQLite file
+fly secrets set NUXT_SESSION_PASSWORD=$(openssl rand -hex 32)
+fly deploy
+```
+
+The app scales to zero when idle and wakes on the first request. Keep it at
+a single machine — SQLite lives on one volume and can't be shared across
+instances. Optional: set `SMTP_*` secrets to enable password-reset emails.
+
 ## What's included
 
 - Public marketing landing page — sticky anchor nav, interactive flip-card
