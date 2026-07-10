@@ -116,6 +116,28 @@ test("sharing a set: public page works, copying needs auth", async ({ page, brow
   expect(gone.status()).toBe(404);
 });
 
+test("AI endpoints are cleanly disabled without an API key", async ({ page }) => {
+  await open(page, "/login");
+  await page.fill('input[type="email"]', EMAIL);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL("**/dashboard");
+
+  const status = await page.request.get("/api/ai/status").then((r) => r.json());
+  expect(status.enabled).toBe(false);
+
+  const gen = await page.request.post("/api/ai/generate", {
+    data: { mode: "topic", input: "travel", count: 6 },
+    failOnStatusCode: false,
+  });
+  expect(gen.status()).toBe(503);
+
+  // The AI controls stay hidden in the editor.
+  const sets = await page.request.get("/api/sets").then((r) => r.json());
+  await open(page, `/sets/${sets[0].id}`);
+  await expect(page.getByText("Generate cards with AI")).toHaveCount(0);
+});
+
 test("password-reset endpoints behave", async ({ request }) => {
   // Identical response for known and unknown emails (no enumeration).
   const known = await request.post("/api/auth/forgot", { data: { email: EMAIL } });

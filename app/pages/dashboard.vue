@@ -16,6 +16,8 @@ interface Stats {
   reviewsToday: number;
   dueTotal: number;
   days: { day: string; reviews: number }[];
+  heatmap: { day: string; reviews: number }[];
+  forecast: { day: string; reviews: number }[];
 }
 
 interface StarterPack {
@@ -57,6 +59,8 @@ const packsByLevel = computed(() =>
 );
 
 const hasChart = computed(() => (stats.value?.days ?? []).some((d) => d.reviews > 0));
+const hasForecast = computed(() => (stats.value?.forecast ?? []).some((d) => d.reviews > 0));
+const hasHeatmap = computed(() => (stats.value?.heatmap ?? []).some((d) => d.reviews > 0));
 const addingPack = ref<string | null>(null);
 
 async function addPack(slug: string) {
@@ -114,6 +118,22 @@ async function removeSet(id: number) {
           Reviews · last 14 days
         </h2>
         <StatsChart :days="stats.days" />
+      </div>
+      <div v-if="hasForecast" class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
+        <h2 class="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+          Upcoming reviews · next 14 days
+        </h2>
+        <StatsChart
+          :days="stats.forecast"
+          :noun="['card due', 'cards due']"
+          caption="Cards scheduled for review per day, next 14 days"
+        />
+      </div>
+      <div v-if="hasHeatmap" class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-800">
+        <h2 class="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+          Activity · last 6 months
+        </h2>
+        <ActivityHeatmap :days="stats.heatmap" />
       </div>
     </div>
 

@@ -1,7 +1,19 @@
 <script setup lang="ts">
-// Column chart of reviews per day. Pure inline SVG — no chart library —
+// Column chart of a per-day count. Pure inline SVG — no chart library —
 // sized by viewBox so it scales with the container.
-const props = defineProps<{ days: { day: string; reviews: number }[] }>();
+const props = withDefaults(
+  defineProps<{
+    days: { day: string; reviews: number }[];
+    // Tooltip wording and accessible caption, so the same chart can show
+    // past reviews or the upcoming due forecast.
+    noun?: [singular: string, plural: string];
+    caption?: string;
+  }>(),
+  {
+    noun: () => ["review", "reviews"],
+    caption: "Reviews per day, last 14 days",
+  },
+);
 
 const W = 560;
 const H = 150;
@@ -95,7 +107,7 @@ const hovered = ref<Bar | null>(null);
 
 <template>
   <div class="relative">
-    <svg :viewBox="`0 0 ${W} ${H}`" class="block w-full" role="img" aria-label="Reviews per day, last 14 days">
+    <svg :viewBox="`0 0 ${W} ${H}`" class="block w-full" role="img" :aria-label="caption">
       <!-- gridlines + y ticks at 0 / half / max -->
       <g v-for="frac in [0.5, 1]" :key="frac">
         <line
@@ -180,12 +192,12 @@ const hovered = ref<Bar | null>(null);
       :style="{ left: `${((PAD.left + (hovered.index + 0.5) * band) / W) * 100}%` }"
     >
       <span class="font-semibold tabular-nums">{{ hovered.reviews }}</span>
-      {{ hovered.reviews === 1 ? "review" : "reviews" }}
+      {{ hovered.reviews === 1 ? noun[0] : noun[1] }}
       <span class="text-gray-400 dark:text-gray-500">· {{ tooltipDate(hovered.day) }}</span>
     </div>
 
     <table class="sr-only">
-      <caption>Reviews per day, last 14 days</caption>
+      <caption>{{ caption }}</caption>
       <tbody>
         <tr v-for="d in days" :key="d.day">
           <th scope="row">{{ d.day }}</th>
