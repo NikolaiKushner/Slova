@@ -5,6 +5,9 @@ export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  // "user" | "admin". There is no in-app way to become admin; the only admin
+  // account is created by the dev/staging seed (server/utils/seedUsers.ts).
+  role: text("role").notNull().default("user"),
   // CEFR level picked at registration (A1 | A2 | B1); null when skipped.
   level: text("level"),
   createdAt: text("created_at")

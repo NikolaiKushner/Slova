@@ -77,7 +77,7 @@ export async function generateCards(options: {
 
   const response = await getClient().messages.create({
     model: MODEL,
-    max_tokens: 16000,
+    max_tokens: 1024,
     system: SYSTEM,
     output_config: { format: { type: "json_schema", schema: CARDS_SCHEMA } },
     messages: [{ role: "user", content: prompt }],

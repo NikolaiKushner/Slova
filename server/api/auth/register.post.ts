@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const passwordHash = await hashPassword(password);
   const [user] = await db.insert(users).values({ email, passwordHash, level }).returning();
 
-  await setUserSession(event, { user: { id: user.id, email: user.email } });
+  await setUserSession(event, { user: { id: user.id, email: user.email, role: user.role } });
 
   return { id: user.id, email: user.email };
 });
