@@ -28,6 +28,10 @@ Guidance for AI agents (and humans) contributing to this repo.
 ## Project notes
 
 - Nuxt 4 + Nitro server routes + Drizzle/SQLite; see README.md for layout.
+- Predefined test accounts (superadmin, pre-filled test user, empty user)
+  are seeded on dev startup and printed to the console — credentials and
+  usage rules in `TEST_USERS.md`. Use them instead of creating throwaway
+  accounts.
 - After editing `server/database/schema.ts`, generate a migration with
   `npm run db:generate` (this is a codegen step, not a test run) and commit
   the generated files.

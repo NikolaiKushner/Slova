@@ -67,13 +67,24 @@ server/
 ## Quickstart
 
 ```bash
+make dev
+```
+
+First run creates `.env` from `.env.example` (with a generated
+`NUXT_SESSION_PASSWORD`), installs dependencies, and starts the dev server.
+Or do the same by hand:
+
+```bash
 npm install
 cp .env.example .env   # sets NUXT_SESSION_PASSWORD and DATABASE_URL
 npm run dev
 ```
 
 Open http://localhost:3000 — register an account, create a set, add a few
-term/definition cards, and try the study mode.
+term/definition cards, and try the study mode. Or skip registration: three
+test accounts (superadmin, a user with pre-filled study data, an empty user)
+are seeded on startup and printed to the console — see
+[TEST_USERS.md](TEST_USERS.md).
 
 Migrations run automatically on server startup (see `server/plugins/migrate.ts`).
 After changing `server/database/schema.ts`, generate a new migration:
@@ -100,6 +111,14 @@ CI (`.github/workflows/ci.yml`) runs the same three steps on every push to
 `main` and on pull requests.
 
 ## Docker
+
+```bash
+make docker       # production image (same stages Fly.io builds), DB in ./data
+make docker-dev   # hot-reload dev server inside Docker instead of natively
+make docker-down  # stop and remove the containers
+```
+
+Or without the Makefile:
 
 ```bash
 docker build -t slova .
