@@ -46,6 +46,18 @@ export const SEED_USERS: SeedUser[] = [
   },
 ];
 
+// Printed by server/plugins/seed.ts on startup. A static literal on purpose:
+// piping SEED_USERS[].password through console.log trips CodeQL's clear-text
+// password logging alert, and these fixed public fixtures aren't secrets.
+// tests/unit/seedUsers.test.ts asserts it stays in sync with SEED_USERS.
+export const SEED_BANNER = `
+──────────────────────── test accounts ────────────────────────
+  admin@slova.local      superadmin123    superadmin (role=admin)
+  test@slova.local       testuser123      pre-filled sets & review history
+  fresh@slova.local      freshuser123     empty account for onboarding flows
+  Details: TEST_USERS.md. Never set SLOVA_SEED_USERS=1 in prod.
+────────────────────────────────────────────────────────────────`;
+
 const days = (n: number) => sqlTimestamp(new Date(Date.now() + n * 24 * 60 * 60 * 1000));
 
 // Creates any SEED_USERS missing from the db. Existing accounts are left

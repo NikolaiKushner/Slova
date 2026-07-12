@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import * as schema from "../../server/database/schema";
 import { sqlTimestamp } from "../../server/utils/srs";
-import { SEED_USERS, seedPredefinedUsers } from "../../server/utils/seedUsers";
+import { SEED_BANNER, SEED_USERS, seedPredefinedUsers } from "../../server/utils/seedUsers";
 
 const fakeHash = async (password: string) => `hashed:${password}`;
 
@@ -17,6 +17,17 @@ function freshDb() {
   migrate(db, { migrationsFolder: "./server/database/migrations" });
   return db;
 }
+
+// SEED_BANNER is a static literal (not built from SEED_USERS) so the startup
+// log carries no password-typed data flow; this keeps the two in sync.
+describe("SEED_BANNER", () => {
+  it("lists every predefined account's email and password", () => {
+    for (const user of SEED_USERS) {
+      expect(SEED_BANNER).toContain(user.email);
+      expect(SEED_BANNER).toContain(user.password);
+    }
+  });
+});
 
 describe("seedPredefinedUsers", () => {
   let db: ReturnType<typeof freshDb>;

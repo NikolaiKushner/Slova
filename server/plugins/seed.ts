@@ -1,5 +1,5 @@
 import { db } from "../utils/db";
-import { SEED_USERS, seedPredefinedUsers } from "../utils/seedUsers";
+import { SEED_BANNER, seedPredefinedUsers } from "../utils/seedUsers";
 
 // Seeds the predefined test accounts (see TEST_USERS.md) and prints their
 // credentials. Runs after migrate.ts (nitro loads plugins alphabetically).
@@ -11,20 +11,8 @@ export default defineNitroPlugin(async () => {
 
   const created = await seedPredefinedUsers(db, hashPassword);
 
-  const rows = SEED_USERS.map(
-    (u) => `  ${u.email.padEnd(22)} ${u.password.padEnd(16)} ${u.note}`,
-  );
-  console.log(
-    [
-      "",
-      "──────────────────────── test accounts ────────────────────────",
-      ...rows,
-      created.length
-        ? `  (created this start: ${created.join(", ")})`
-        : "  (all accounts already existed — data untouched)",
-      "  Details: TEST_USERS.md. Never set SLOVA_SEED_USERS=1 in prod.",
-      "────────────────────────────────────────────────────────────────",
-      "",
-    ].join("\n"),
-  );
+  const status = created.length
+    ? `  (created this start: ${created.join(", ")})`
+    : "  (all accounts already existed — data untouched)";
+  console.log(`${SEED_BANNER}\n${status}\n`);
 });
