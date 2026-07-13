@@ -4,6 +4,77 @@
    inline script in app.vue) so the user's choice wins over the OS setting. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Design tokens — see DESIGN.md for usage rules. Light theme values here;
+   dark theme overrides the same variables in the .dark block below.
+   NOTE: Tailwind's default --radius-sm/md/lg are intentionally NOT redefined —
+   existing screens use rounded-md/lg/xl and would resize. The design-system
+   radius scale maps onto Tailwind defaults: sm=8px (rounded-lg),
+   md=12px (rounded-xl), lg=16px (rounded-2xl); only --radius-card is new. */
+@theme {
+  --font-sans:
+    -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Accent (indigo) — use sparingly: one primary CTA per screen. */
+  --color-accent: #5b4fd6;
+  --color-accent-soft: #8f86ea;
+  --color-accent-subtle: #edebfb;
+
+  /* Text and outlines. */
+  --color-ink: #1d2433;
+  --color-ink-muted: #6a7080;
+  --color-ink-faint: #9aa0ad;
+
+  /* Backgrounds and borders. */
+  --color-paper: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-border: #e7e5de;
+
+  /* Semantic states — fills, icons, and large text; not body-size text on
+     bare surface (see DESIGN.md contrast notes). */
+  --color-success: #0e9f8c;
+  --color-error: #e05252;
+  --color-warning: #e8a13c;
+
+  --radius-card: 12px;
+
+  --shadow-card: 0 1px 3px rgb(29 36 51 / 0.06), 0 4px 12px rgb(29 36 51 / 0.06);
+  --shadow-pop: 0 4px 12px rgb(29 36 51 / 0.1), 0 16px 40px rgb(29 36 51 / 0.16);
+
+  --ease-brand: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Motion tokens (plain variables: Tailwind v4 has no duration namespace). */
+:root {
+  --duration-quick: 150ms;
+  --duration-base: 250ms;
+  --duration-flip: 400ms;
+}
+
+/* Dark theme: same variables, recalibrated. Accent swaps with accent-soft so
+   it stays contrast-safe on dark surfaces. Card shadows are turned off —
+   in the dark theme rely on --color-border instead of elevation. */
+.dark {
+  --color-accent: #8f86ea;
+  --color-accent-soft: #5b4fd6;
+  --color-accent-subtle: #2b2a4a;
+
+  --color-ink: #f2f1ff;
+  --color-ink-muted: #a7acc2;
+  --color-ink-faint: #7d84a0;
+
+  --color-paper: #14161f;
+  --color-surface: #1e2130;
+  --color-border: #323752;
+
+  --color-success: #2cb8a4;
+  --color-error: #e97a7a;
+  --color-warning: #edb25f;
+
+  --shadow-card: 0 0 #0000;
+  --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

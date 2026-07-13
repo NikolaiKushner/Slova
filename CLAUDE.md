@@ -25,6 +25,15 @@ Guidance for AI agents (and humans) contributing to this repo.
   stays green: new features get coverage, changed behavior gets updated
   assertions.
 
+## Design system
+
+- Read `DESIGN.md` before any UI change.
+- Colors, radii, and shadows go through design tokens only (`bg-accent`,
+  `text-ink`, `rounded-card`, `shadow-card`, …) — hardcoded hex values in
+  components are forbidden.
+- New UI patterns: propose an addition to `DESIGN.md` first, then implement.
+- `/design` (dev-only page) is the visual showcase for tokens and the mascot.
+
 ## Project notes
 
 - Nuxt 4 + Nitro server routes + Drizzle/SQLite; see README.md for layout.
